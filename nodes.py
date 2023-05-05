@@ -1,22 +1,9 @@
-from transformers import T5EncoderModel, pipeline, logging as transformers_logging
-from diffusers import DiffusionPipeline, logging as diffusers_logging
-from comfy.model_management import get_torch_device, xformers_enabled
-from comfy.utils import ProgressBar
-from warnings import filterwarnings
+from comfy.model_management import get_torch_device
+from transformers import pipeline
 from pathlib import Path
 from PIL import Image
 import numpy as np
-import logging
 import torch
-import gc
-
-
-transformers_logging.set_verbosity_error()
-diffusers_logging.set_verbosity_error()
-logging.getLogger("xformers").addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
-filterwarnings("ignore", category = FutureWarning, message = "The `reduce_labels` parameter is deprecated")
-filterwarnings("ignore", category = UserWarning, message = "You seem to be using the pipelines sequentially on GPU")
-filterwarnings("ignore", category = UserWarning, message = "TypedStorage is deprecated")
 
 
 def resize(tensor):
@@ -31,70 +18,25 @@ def resize(tensor):
 	return tensor
 
 
-class ZDecode:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"latents": ("LATENT",),
-				"vae": ("VAE",),
-				"tile": ([False, True], {"default": False}),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("IMAGE",)
-
-	def process(self, vae, latents, tile):
-		return (vae.decode_tiled(latents["samples"]) if tile else vae.decode(latents["samples"]),)
-
-
-class ZEncode:
+class Filter:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
 				"images": ("IMAGE",),
-				"vae": ("VAE",),
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
-				"tile": ([False, True], {"default": False}),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("LATENT",)
-
-	def process(self, images, vae, batch_size, tile):
-		images = images[:, :, :, :3]
-		images = resize(images)
-
-		if batch_size > 1:
-			images = images.repeat(batch_size, 1, 1, 1)
-
-		return ({"samples": vae.encode_tiled(images) if tile else vae.encode(images)},)
-
-
-class ZFilter:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"images": ("IMAGE",),
-				"indexes": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"count": ("INT", {"default": 1, "min": 1, "max": 64}),
 				"aesthetic": ([False, True], {"default": True}),
 				"waifu": ([False, True], {"default": True}),
 			}
 		}
 
-	CATEGORY = "Zuellni"
+	CATEGORY = "Zuellni/Aesthetic"
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE", "LIST",)
 
-	def process(self, images, indexes, aesthetic, waifu):
+	def process(self, images, count, aesthetic, waifu):
 		if not aesthetic and not waifu:
-			return (images[indexes - 1].unsqueeze(0), [indexes - 1],)
+			return (images[count - 1].unsqueeze(0), [count - 1],)
 
 		a_model = pipeline("image-classification", "cafeai/cafe_aesthetic", device = get_torch_device())
 		w_model = pipeline("image-classification", "cafeai/cafe_waifu", device = get_torch_device())
@@ -120,187 +62,51 @@ class ZFilter:
 			scores[index] = score
 
 		sorted_scores = sorted(scores.items(), key = lambda x: x[1], reverse = True)
-		top_images = [images[score[0]] for score in sorted_scores[:indexes]]
+		top_images = [images[score[0]] for score in sorted_scores[:count]]
 		top_images = torch.stack(top_images)
-		top_indexes = [score[0] for score in sorted_scores[:indexes]]
-		return (top_images, top_indexes,)
+		top_list = [score[0] for score in sorted_scores[:count]]
+		return (top_images, top_list,)
 
 
-class ZNoise:
+class Select:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"images": ("IMAGE",),
-				"amount": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01}),
-				"color": ([False, True], {"default": False}),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("IMAGE",)
-
-	def process(self, images, amount, color):
-		tensor = images.clone()
-
-		if amount > 0.0:
-			noise = torch.randn(tensor.shape[0], tensor.shape[1], tensor.shape[2], 3 if color else 1)
-			tensor += noise * amount
-
-		return (tensor,)
-
-
-class ZPrompt:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
-				"positive": ("STRING", {"default": "", "multiline": True}),
-				"negative": ("STRING", {"default": "", "multiline": True}),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("PROMPT",)
-
-	def process(self, batch_size, positive, negative):
-		text = T5EncoderModel.from_pretrained(
-			"DeepFloyd/IF-I-XL-v1.0",
-			subfolder = "text_encoder",
-			variant = "fp16",
-			device_map = "auto",
-			load_in_8bit = True,
-			torch_dtype = torch.float16,
-		)
-
-		model = DiffusionPipeline.from_pretrained(
-			"DeepFloyd/IF-I-XL-v1.0",
-			requires_safety_checker = False,
-			safety_checker = None,
-			text_encoder = text,
-			unet = None,
-			watermarker = None,
-		)
-
-		positive, negative = model.encode_prompt(
-			prompt = positive,
-			negative_prompt = negative,
-			num_images_per_prompt = batch_size
-		)
-
-		del model, text
-		gc.collect()
-		return ((positive, negative),)
-
-
-class ZRepeat:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"latents": ("LATENT",),
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("LATENT",)
-
-	def process(self, latents, batch_size):
-		samples = latents["samples"]
-
-		if batch_size > 1:
-			samples = samples.repeat(batch_size, 1, 1, 1)
-
-		return ({"samples": samples},)
-
-
-class ZResize:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.05}),
-				"mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
-				"crop": ([False, True], {"default": True}),
-			},
-			"optional": {
-				"images": ("IMAGE",),
-				"latents": ("LATENT",),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("IMAGE", "LATENT",)
-
-	def process(self, scale, mode, crop, images = None, latents = None):
-		if scale != 1.0:
-			if images is not None:
-				images = images.permute(0, 3, 1, 2)
-				images = torch.nn.functional.interpolate(images, mode = mode, scale_factor = scale)
-				images = images.permute(0, 2, 3, 1)
-
-				if crop:
-					images = resize(images)
-
-			if latents is not None:
-				samples = latents["samples"]
-				samples = torch.nn.functional.interpolate(samples, mode = mode, scale_factor = scale)
-
-				if crop:
-					samples = samples.permute(0, 3, 2, 1)
-					samples = resize(samples)
-					samples = samples.permute(0, 3, 2, 1)
-
-				latents = {"samples": samples}
-
-		return (images, latents,)
-
-
-class ZSelect:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"latents": ("LATENT",),
+				"latent": ("LATENT",),
 				"list": ("LIST",),
 			}
 		}
 
-	CATEGORY = "Zuellni"
+	CATEGORY = "Zuellni/Aesthetic"
 	FUNCTION = "process"
 	RETURN_TYPES = ("LATENT",)
 
-	def process(self, latents, list):
-		samples = latents["samples"]
-		tensors = []
+	def process(self, latent, list):
+		latent = latent["samples"]
+		samples = []
 
 		for index in list:
-			index = min(samples.shape[0] - 1, index)
-			sample = samples[index:index + 1].clone()
-			tensors.append(sample)
+			index = min(latent.shape[0] - 1, index)
+			sample = latent[index:index + 1].clone()
+			samples.append(sample)
 
-		tensors = torch.cat(tensors)
-		return ({"samples": tensors},)
+		samples = torch.cat(samples)
+		return ({"samples": samples},)
 
 
-class ZShare:
+class Share:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
 				"images": ("IMAGE",),
-				"output": ("STRING", {"default": "D:\Downloads"}),
+				"output": ("STRING", {"default": "share"}),
 				"prefix": ("STRING", {"default": "share"}),
 			}
 		}
 
-	CATEGORY = "Zuellni"
+	CATEGORY = "Zuellni/Image"
 	COUNTER = 1
 	FUNCTION = "process"
 	OUTPUT_NODE = True
@@ -316,183 +122,144 @@ class ZShare:
 		return (None,)
 
 
-class ZStage1:
+class VAEDecode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"prompts": ("PROMPT",),
-				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+				"latent": ("LATENT",),
+				"vae": ("VAE",),
+				"tile": ([False, True], {"default": False}),
 			}
 		}
 
-	CATEGORY = "Zuellni"
+	CATEGORY = "Zuellni/Latent"
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, prompts, seed, steps, cfg):
-		progress = ProgressBar(steps)
-
-		def callback(step, timestep, latents):
-			progress.update_absolute(step)
-
-		model = DiffusionPipeline.from_pretrained(
-			"DeepFloyd/IF-I-XL-v1.0",
-			requires_safety_checker = False,
-			safety_checker = None,
-			text_encoder = None,
-			watermarker = None,
-			variant = "fp16",
-			torch_dtype = torch.float16,
-		)
-
-		model.to(get_torch_device())
-		model.unet.to(memory_format = torch.channels_last)
-
-		tensor = model(
-			generator = torch.manual_seed(seed),
-			num_inference_steps = steps,
-			guidance_scale = cfg,
-			prompt_embeds = prompts[0],
-			negative_prompt_embeds = prompts[1],
-			output_type = "pt",
-			callback = callback,
-		).images
-
-		tensor = tensor.permute(0, 2, 3, 1).cpu()
-		return (tensor,)
+	def process(self, latent, vae, tile):
+		return (vae.decode_tiled(latent["samples"]) if tile else vae.decode(latent["samples"]),)
 
 
-class ZStage2:
+class VAEEncode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"images": ("IMAGE",),
-				"prompts": ("PROMPT",),
-				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+				"image": ("IMAGE",),
+				"vae": ("VAE",),
+				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"tile": ([False, True], {"default": False}),
 			}
 		}
 
-	CATEGORY = "Zuellni"
+	CATEGORY = "Zuellni/Latent"
 	FUNCTION = "process"
-	RETURN_TYPES = ("IMAGE",)
+	RETURN_TYPES = ("LATENT",)
 
-	def process(self, images, prompts, seed, steps, cfg):
-		tensor = images.permute(0, 3, 1, 2)
-		progress = ProgressBar(steps)
-
-		def callback(step, timestep, latents):
-			progress.update_absolute(step)
-
-		model = DiffusionPipeline.from_pretrained(
-			"DeepFloyd/IF-II-L-v1.0",
-			requires_safety_checker = False,
-			safety_checker = None,
-			text_encoder = None,
-			watermarker = None,
-			variant = "fp16",
-			torch_dtype = torch.float16,
-		)
-
-		model.to(get_torch_device())
-		model.unet.to(memory_format = torch.channels_last)
-
-		tensor = model(
-			image = tensor,
-			generator = torch.manual_seed(seed),
-			num_inference_steps = steps,
-			guidance_scale = cfg,
-			prompt_embeds = prompts[0],
-			negative_prompt_embeds = prompts[1],
-			output_type = "pt",
-			callback = callback,
-		).images
-
-		tensor = tensor.permute(0, 2, 3, 1).cpu()
-		return (tensor,)
-
-
-class ZUpscale:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"images": ("IMAGE",),
-				"tile": ([False, True], {"default": True}),
-				"tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
-				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
-				"positive": ("STRING", {"default": "", "multiline": True}),
-				"negative": ("STRING", {"default": "", "multiline": True}),
-			}
-		}
-
-	CATEGORY = "Zuellni"
-	FUNCTION = "process"
-	RETURN_TYPES = ("IMAGE",)
-
-	def process(self, images, tile_size, tile, seed, steps, cfg, positive, negative):
-		tensor = images.permute(0, 3, 1, 2)
-		batch_size = tensor.shape[0]
-		progress = ProgressBar(steps)
-
-		def callback(step, timestep, latents):
-			progress.update_absolute(step)
+	def process(self, image, vae, tile, batch_size):
+		image = image[:, :, :, :3]
+		image = resize(image)
 
 		if batch_size > 1:
-			positive = [positive] * batch_size
-			negative = [negative] * batch_size
+			image = image.repeat(batch_size, 1, 1, 1)
 
-		model = DiffusionPipeline.from_pretrained(
-			"stabilityai/stable-diffusion-x4-upscaler",
-			requires_safety_checker = False,
-			safety_checker = None,
-			watermarker = None,
-			torch_dtype = torch.float16,
-		)
-
-		model.to(get_torch_device())
-		model.unet.to(memory_format = torch.channels_last)
-
-		if xformers_enabled():
-			model.enable_xformers_memory_efficient_attention()
-
-		if tile:
-			model.vae.config.sample_size = tile_size
-			model.vae.enable_tiling()
-
-		tensor = model(
-			image = tensor,
-			generator = torch.manual_seed(seed),
-			num_inference_steps = steps,
-			guidance_scale = cfg,
-			prompt = positive,
-			negative_prompt = negative,
-			output_type = "pt",
-			callback = callback,
-		).images
-
-		tensor = tensor.permute(0, 2, 3, 1).cpu()
-		return (tensor,)
+		return ({"samples": vae.encode_tiled(image) if tile else vae.encode(image)},)
 
 
-NODE_CLASS_MAPPINGS = {
-	"ZDecode": ZDecode,
-	"ZEncode": ZEncode,
-	"ZFilter": ZFilter,
-	"ZNoise": ZNoise,
-	"ZPrompt": ZPrompt,
-	"ZRepeat": ZRepeat,
-	"ZResize": ZResize,
-	"ZSelect": ZSelect,
-	"ZShare": ZShare,
-	"ZStage1": ZStage1,
-	"ZStage2": ZStage2,
-	"ZUpscale": ZUpscale,
-}
+class Repeat:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"latent": ("LATENT",),
+				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+			}
+		}
+
+	CATEGORY = "Zuellni/Latent"
+	FUNCTION = "process"
+	RETURN_TYPES = ("LATENT",)
+
+	def process(self, samples, batch_size):
+		latent = latent["samples"]
+
+		if batch_size > 1:
+			latent = latent.repeat(batch_size, 1, 1, 1)
+
+		return ({"samples": latent},)
+
+
+class Noise:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"amount": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01}),
+				"color": ([False, True], {"default": False}),
+			},
+			"optional": {
+				"image": ("IMAGE",),
+				"latent": ("LATENT",),
+			}
+		}
+
+	CATEGORY = "Zuellni/Multi"
+	FUNCTION = "process"
+	RETURN_TYPES = ("IMAGE", "LATENT",)
+
+	def process(self, amount, color, image = None, latent = None):
+		if amount > 0.0:
+			if image is not None:
+				noise = torch.randn(image.shape[0], image.shape[1], image.shape[2], 3 if color else 1)
+				image = image + noise * amount
+
+			if latent is not None:
+				latent = latent["samples"]
+				noise = torch.randn(latent.shape[0], latent.shape[1], latent.shape[2], 3 if color else 1)
+				latent = {"samples": latent + noise * amount}
+
+		return (image, latent,)
+
+
+class Resize:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.05}),
+				"mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
+				"crop": ([False, True], {"default": True}),
+			},
+			"optional": {
+				"image": ("IMAGE",),
+				"latent": ("LATENT",),
+			}
+		}
+
+	CATEGORY = "Zuellni/Multi"
+	FUNCTION = "process"
+	RETURN_TYPES = ("IMAGE", "LATENT",)
+
+	def process(self, scale, mode, crop, image = None, latent = None):
+		if scale != 1.0:
+			if image is not None:
+				image = image.permute(0, 3, 1, 2)
+				image = torch.nn.functional.interpolate(image, mode = mode, scale_factor = scale)
+				image = image.permute(0, 2, 3, 1)
+
+				if crop:
+					image = resize(image)
+
+			if latent is not None:
+				latent = latent["samples"]
+				latent = torch.nn.functional.interpolate(latent, mode = mode, scale_factor = scale)
+
+				if crop:
+					latent = latent.permute(0, 3, 2, 1)
+					latent = resize(latent)
+					latent = latent.permute(0, 3, 2, 1)
+
+				latent = {"samples": latent}
+
+		return (image, latent,)
