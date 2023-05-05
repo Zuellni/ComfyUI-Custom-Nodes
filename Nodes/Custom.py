@@ -1,21 +1,12 @@
 from comfy.model_management import get_torch_device
+from folder_paths import get_output_directory
+from nodes import VAEEncode
+
 from transformers import pipeline
 from pathlib import Path
 from PIL import Image
 import numpy as np
 import torch
-
-
-def resize(tensor):
-	h = tensor.shape[1] // 8 * 8
-	w = tensor.shape[2] // 8 * 8
-
-	if tensor.shape[1] != h or tensor.shape[2] != w:
-		h_offset = tensor.shape[1] % 8 // 2
-		w_offset = tensor.shape[2] % 8 // 2
-		tensor = tensor[:, h_offset:h + h_offset, w_offset:w + w_offset, :]
-
-	return tensor
 
 
 class Filter:
@@ -95,14 +86,14 @@ class Select:
 		return ({"samples": samples},)
 
 
-class Share:
+class Save:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
 				"images": ("IMAGE",),
-				"output_dir": ("STRING", {"default": ""}),
-				"prefix": ("STRING", {"default": "share"}),
+				"output_dir": ("STRING", {"default": get_output_directory()}),
+				"prefix": ("STRING", {"default": "clean"}),
 			}
 		}
 
@@ -119,13 +110,13 @@ class Share:
 			output_dir = Path(output_dir)
 
 			if output_dir.exists():
-				image.save(output_dir / f"{prefix}_{Share.COUNTER:05}.png", optimize = True)
-				Share.COUNTER += 1
+				image.save(output_dir / f"{prefix}_{Save.COUNTER:05}.png", optimize = True)
+				Save.COUNTER += 1
 
 		return (None,)
 
 
-class VAEDecode:
+class Decode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -144,7 +135,7 @@ class VAEDecode:
 		return (vae.decode_tiled(latent["samples"]) if tile else vae.decode(latent["samples"]),)
 
 
-class VAEEncode:
+class Encode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -162,7 +153,7 @@ class VAEEncode:
 
 	def process(self, image, vae, tile, batch_size):
 		image = image[:, :, :, :3]
-		image = resize(image)
+		image = VAEEncode.vae_encode_crop_pixels(image)
 
 		if batch_size > 1:
 			image = image.repeat(batch_size, 1, 1, 1)
@@ -232,7 +223,7 @@ class Resize:
 			"required": {
 				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.05}),
 				"mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
-				"crop": ([False, True], {"default": True}),
+				"crop": ([False, True], {"default": False}),
 			},
 			"optional": {
 				"image": ("IMAGE",),
@@ -252,7 +243,7 @@ class Resize:
 				image = image.permute(0, 2, 3, 1)
 
 				if crop:
-					image = resize(image)
+					image = VAEEncode.vae_encode_crop_pixels(image)
 
 			if latent is not None:
 				latent = latent["samples"]
@@ -260,7 +251,7 @@ class Resize:
 
 				if crop:
 					latent = latent.permute(0, 3, 2, 1)
-					latent = resize(latent)
+					latent = VAEEncode.vae_encode_crop_pixels(latent)
 					latent = latent.permute(0, 3, 2, 1)
 
 				latent = {"samples": latent}

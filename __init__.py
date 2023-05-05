@@ -3,8 +3,8 @@ from diffusers import logging as diffusers_logging
 from warnings import filterwarnings
 import logging
 
-from .if_nodes import *
-from .nodes import *
+from .Nodes.Custom import *
+from .Nodes.DeepFloyd import *
 
 
 transformers_logging.set_verbosity_error()
@@ -17,24 +17,24 @@ filterwarnings("ignore", category = UserWarning, message = "TypedStorage is depr
 
 NODE_CLASS_MAPPINGS = {
 	# Aesthetic
-	"Filter": nodes.Filter,
-	"Select": nodes.Select,
+	"Filter": Nodes.Custom.Filter,
+	"Select": Nodes.Custom.Select,
 
 	# Image
-	"Share": nodes.Share,
+	"Save": Nodes.Custom.Save,
 
 	# Latent
-	"VAE Decode": nodes.VAEDecode,
-	"VAE Encode": nodes.VAEEncode,
-	"Repeat": nodes.Repeat,
+	"VAE Decode": Nodes.Custom.Decode,
+	"VAE Encode": Nodes.Custom.Encode,
+	"Repeat": Nodes.Custom.Repeat,
 
 	# Multi
-	"Noise": nodes.Noise,
-	"Resize": nodes.Resize,
+	"Noise": Nodes.Custom.Noise,
+	"Resize": Nodes.Custom.Resize,
 
 	# DeepFloyd
-	"Encode": if_nodes.Encode,
-	"Stage I": if_nodes.StageI,
-	"Stage II": if_nodes.StageII,
-	"Stage III": if_nodes.StageIII,
+	"Encode": Nodes.DeepFloyd.Encode,
+	"Stage I": Nodes.DeepFloyd.StageI,
+	"Stage II": Nodes.DeepFloyd.StageII,
+	"Stage III": Nodes.DeepFloyd.StageIII,
 }
