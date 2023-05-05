@@ -179,7 +179,12 @@ class ZPrompt:
 			watermarker = None,
 		)
 
-		positive, negative = model.encode_prompt(prompt = positive, negative_prompt = negative, num_images_per_prompt = batch_size)
+		positive, negative = model.encode_prompt(
+			prompt = positive,
+			negative_prompt = negative,
+			num_images_per_prompt = batch_size
+		)
+
 		del model, text
 		gc.collect()
 		return ((positive, negative),)
@@ -230,16 +235,24 @@ class ZResize:
 	def process(self, scale, mode, crop, images = None, latents = None):
 		if scale != 1.0:
 			if images is not None:
-				tensors = images.permute(0, 3, 1, 2)
-				tensors = common_upscale(tensors, int(tensors.shape[3] * scale // 1), int(tensors.shape[2] * scale // 1), mode, "center" if crop else None)
-				tensors = tensors.permute(0, 2, 3, 1).cpu()
-				return (tensors, latents,)
-			elif latents is not None:
-				tensors = latents["samples"]
-				tensors = common_upscale(tensors, int(tensors.shape[3] * scale // 1), int(tensors.shape[2] * scale // 1), mode, "center" if crop else None)
-				return (images, {"samples": tensors},)
-			else:
-				raise ValueError("Invalid input.")
+				images = images.permute(0, 3, 1, 2)
+				images = common_upscale(
+					images,
+					int(images.shape[3] * scale // 1),
+					int(images.shape[2] * scale // 1),
+					mode,
+					"center" if crop else None,
+				)
+				images = images.permute(0, 2, 3, 1).cpu()
+
+			if latents is not None:
+				latents["samples"] = common_upscale(
+					latents["samples"],
+					int(latents["samples"].shape[3] * scale // 1),
+					int(latents["samples"].shape[2] * scale // 1),
+					mode,
+					"center" if crop else None,
+				)
 		return (images, latents,)
 
 
