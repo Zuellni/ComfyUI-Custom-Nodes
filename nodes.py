@@ -101,7 +101,7 @@ class Share:
 		return {
 			"required": {
 				"images": ("IMAGE",),
-				"output": ("STRING", {"default": "share"}),
+				"output_dir": ("STRING", {"default": "share"}),
 				"prefix": ("STRING", {"default": "share"}),
 			}
 		}
@@ -112,12 +112,15 @@ class Share:
 	OUTPUT_NODE = True
 	RETURN_TYPES = ()
 
-	def process(self, images, output, prefix):
+	def process(self, images, output_dir, prefix):
 		for image in images:
 			image = 255.0 * image.cpu().numpy()
 			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-			image.save(Path(output) / f"{prefix}_{ZShare.COUNTER:05}.png", optimize = True)
-			ZShare.COUNTER += 1
+			output_dir = Path(output_dir)
+
+			if output_dir.exists():
+				image.save(output_dir / f"{prefix}_{Share.COUNTER:05}.png", optimize = True)
+				Share.COUNTER += 1
 
 		return (None,)
 
