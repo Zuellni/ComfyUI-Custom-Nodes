@@ -41,7 +41,7 @@ class Encode:
 			watermarker = None,
 		)
 
-		positive, negative = model.encode_prompt(
+		positive, negative = pipe.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
 			num_images_per_prompt = batch_size
