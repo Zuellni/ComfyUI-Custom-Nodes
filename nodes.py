@@ -1,7 +1,7 @@
 from transformers import T5EncoderModel, pipeline, logging as transformers_logging
 from diffusers import DiffusionPipeline, logging as diffusers_logging
 from comfy.model_management import get_torch_device, xformers_enabled
-from comfy.utils import ProgressBar, common_upscale
+from comfy.utils import ProgressBar
 from warnings import filterwarnings
 from pathlib import Path
 from PIL import Image
@@ -17,6 +17,18 @@ logging.getLogger("xformers").addFilter(lambda r: "A matching Triton is not avai
 filterwarnings("ignore", category = FutureWarning, message = "The `reduce_labels` parameter is deprecated")
 filterwarnings("ignore", category = UserWarning, message = "You seem to be using the pipelines sequentially on GPU")
 filterwarnings("ignore", category = UserWarning, message = "TypedStorage is deprecated")
+
+
+def resize(tensor):
+	h = tensor.shape[1] // 8 * 8
+	w = tensor.shape[2] // 8 * 8
+
+	if tensor.shape[1] != h or tensor.shape[2] != w:
+		h_offset = tensor.shape[1] % 8 // 2
+		w_offset = tensor.shape[2] % 8 // 2
+		tensor = tensor[:, h_offset:h + h_offset, w_offset:w + w_offset, :]
+
+	return tensor
 
 
 class ZDecode:
@@ -56,13 +68,7 @@ class ZEncode:
 
 	def process(self, images, vae, batch_size, tile):
 		images = images[:, :, :, :3]
-		x = (images.shape[1] // 8) * 8
-		y = (images.shape[2] // 8) * 8
-
-		if images.shape[1] != x or images.shape[2] != y:
-			x_offset = (images.shape[1] % 8) // 2
-			y_offset = (images.shape[2] % 8) // 2
-			images = images[:, x_offset:x + x_offset, y_offset:y + y_offset, :]
+		images = resize(images)
 
 		if batch_size > 1:
 			images = images.repeat(batch_size, 1, 1, 1)
@@ -136,13 +142,13 @@ class ZNoise:
 	RETURN_TYPES = ("IMAGE",)
 
 	def process(self, images, amount, color):
-		tensors = images.clone()
+		tensor = images.clone()
 
 		if amount > 0.0:
-			noise = torch.randn(tensors.shape[0], tensors.shape[1], tensors.shape[2], 3 if color else 1)
-			tensors += noise * amount
+			noise = torch.randn(tensor.shape[0], tensor.shape[1], tensor.shape[2], 3 if color else 1)
+			tensor += noise * amount
 
-		return (tensors,)
+		return (tensor,)
 
 
 class ZPrompt:
@@ -205,12 +211,12 @@ class ZRepeat:
 	RETURN_TYPES = ("LATENT",)
 
 	def process(self, latents, batch_size):
-		tensors = latents["samples"]
+		samples = latents["samples"]
 
 		if batch_size > 1:
-			tensors = tensors.repeat(batch_size, 1, 1, 1)
+			samples = samples.repeat(batch_size, 1, 1, 1)
 
-		return ({"samples": tensors},)
+		return ({"samples": samples},)
 
 
 class ZResize:
@@ -218,7 +224,7 @@ class ZResize:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.1}),
+				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.05}),
 				"mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
 				"crop": ([False, True], {"default": True}),
 			},
@@ -236,23 +242,23 @@ class ZResize:
 		if scale != 1.0:
 			if images is not None:
 				images = images.permute(0, 3, 1, 2)
-				images = common_upscale(
-					images,
-					int(images.shape[3] * scale // 1),
-					int(images.shape[2] * scale // 1),
-					mode,
-					"center" if crop else None,
-				)
-				images = images.permute(0, 2, 3, 1).cpu()
+				images = torch.nn.functional.interpolate(images, mode = mode, scale_factor = scale)
+				images = images.permute(0, 2, 3, 1)
+
+				if crop:
+					images = resize(images)
 
 			if latents is not None:
-				latents["samples"] = common_upscale(
-					latents["samples"],
-					int(latents["samples"].shape[3] * scale // 1),
-					int(latents["samples"].shape[2] * scale // 1),
-					mode,
-					"center" if crop else None,
-				)
+				samples = latents["samples"]
+				samples = torch.nn.functional.interpolate(samples, mode = mode, scale_factor = scale)
+
+				if crop:
+					samples = samples.permute(0, 3, 2, 1)
+					samples = resize(samples)
+					samples = samples.permute(0, 3, 2, 1)
+
+				latents = {"samples": samples}
+
 		return (images, latents,)
 
 
@@ -276,8 +282,8 @@ class ZSelect:
 
 		for index in list:
 			index = min(samples.shape[0] - 1, index)
-			tensor = samples[index:index + 1].clone()
-			tensors.append(tensor)
+			sample = samples[index:index + 1].clone()
+			tensors.append(sample)
 
 		tensors = torch.cat(tensors)
 		return ({"samples": tensors},)
@@ -345,7 +351,7 @@ class ZStage1:
 		model.to(get_torch_device())
 		model.unet.to(memory_format = torch.channels_last)
 
-		tensors = model(
+		tensor = model(
 			generator = torch.manual_seed(seed),
 			num_inference_steps = steps,
 			guidance_scale = cfg,
@@ -355,8 +361,8 @@ class ZStage1:
 			callback = callback,
 		).images
 
-		tensors = tensors.permute(0, 2, 3, 1).cpu()
-		return (tensors,)
+		tensor = tensor.permute(0, 2, 3, 1).cpu()
+		return (tensor,)
 
 
 class ZStage2:
@@ -377,7 +383,7 @@ class ZStage2:
 	RETURN_TYPES = ("IMAGE",)
 
 	def process(self, images, prompts, seed, steps, cfg):
-		tensors = images.permute(0, 3, 1, 2)
+		tensor = images.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 
 		def callback(step, timestep, latents):
@@ -396,8 +402,8 @@ class ZStage2:
 		model.to(get_torch_device())
 		model.unet.to(memory_format = torch.channels_last)
 
-		tensors = model(
-			image = tensors,
+		tensor = model(
+			image = tensor,
 			generator = torch.manual_seed(seed),
 			num_inference_steps = steps,
 			guidance_scale = cfg,
@@ -407,8 +413,8 @@ class ZStage2:
 			callback = callback,
 		).images
 
-		tensors = tensors.permute(0, 2, 3, 1).cpu()
-		return (tensors,)
+		tensor = tensor.permute(0, 2, 3, 1).cpu()
+		return (tensor,)
 
 
 class ZUpscale:
@@ -432,8 +438,8 @@ class ZUpscale:
 	RETURN_TYPES = ("IMAGE",)
 
 	def process(self, images, tile_size, tile, seed, steps, cfg, positive, negative):
-		tensors = images.permute(0, 3, 1, 2)
-		batch_size = tensors.shape[0]
+		tensor = images.permute(0, 3, 1, 2)
+		batch_size = tensor.shape[0]
 		progress = ProgressBar(steps)
 
 		def callback(step, timestep, latents):
@@ -461,8 +467,8 @@ class ZUpscale:
 			model.vae.config.sample_size = tile_size
 			model.vae.enable_tiling()
 
-		tensors = model(
-			image = tensors,
+		tensor = model(
+			image = tensor,
 			generator = torch.manual_seed(seed),
 			num_inference_steps = steps,
 			guidance_scale = cfg,
@@ -472,8 +478,8 @@ class ZUpscale:
 			callback = callback,
 		).images
 
-		tensors = tensors.permute(0, 2, 3, 1).cpu()
-		return (tensors,)
+		tensor = tensor.permute(0, 2, 3, 1).cpu()
+		return (tensor,)
 
 
 NODE_CLASS_MAPPINGS = {
