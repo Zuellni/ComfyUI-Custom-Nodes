@@ -184,7 +184,7 @@ class Repeat:
 	FUNCTION = "process"
 	RETURN_TYPES = ("LATENT",)
 
-	def process(self, samples, batch_size):
+	def process(self, latent, batch_size):
 		latent = latent["samples"]
 
 		if batch_size > 1:
