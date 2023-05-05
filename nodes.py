@@ -214,12 +214,12 @@ class Noise:
 	def process(self, amount, color, image = None, latent = None):
 		if amount > 0.0:
 			if image is not None:
-				noise = torch.randn(image.shape[0], image.shape[1], image.shape[2], 3 if color else 1)
+				noise = torch.randn(image.shape[0], image.shape[1], image.shape[2], image.shape[3] if color else 1)
 				image = image + noise * amount
 
 			if latent is not None:
 				latent = latent["samples"]
-				noise = torch.randn(latent.shape[0], latent.shape[1], latent.shape[2], 3 if color else 1)
+				noise = torch.randn(latent.shape[0], latent.shape[1], latent.shape[2], latent.shape[3] if color else 1)
 				latent = {"samples": latent + noise * amount}
 
 		return (image, latent,)
