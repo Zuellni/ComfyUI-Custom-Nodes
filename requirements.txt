@@ -1,0 +1,3 @@
+diffusers
+transformers
+https://github.com/zuellni/bitsandbytes/archive/main.zip
