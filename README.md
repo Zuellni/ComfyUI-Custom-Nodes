@@ -1,2 +1,1 @@
-# comfyui-custom-nodes
-Custom nodes for ComfyUI.
+# Custom nodes for ComfyUI.
