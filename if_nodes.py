@@ -12,6 +12,7 @@ class Encode:
 		return {
 			"required": {
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"load_in_8bit": ([False, True], {"default": False}),
 				"unload": ([False, True], {"default": False}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
@@ -22,14 +23,14 @@ class Encode:
 	FUNCTION = "process"
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, batch_size, unload, positive, negative):
+	def process(self, batch_size, unload, load_in_8bit, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
 			"DeepFloyd/IF-I-XL-v1.0",
 			subfolder = "text_encoder",
 			variant = "fp16",
-			device_map = "auto",
 			torch_dtype = torch.float16,
-			load_in_8bit = True,
+			load_in_8bit = load_in_8bit,
+			device_map = "auto",
 		)
 
 		pipe = DiffusionPipeline.from_pretrained(
@@ -62,7 +63,6 @@ class StageI:
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
 				"model": (["M", "L", "XL"], {"default": "XL"}),
-				"unload": ([False, True], {"default": False}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -73,7 +73,7 @@ class StageI:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, positive, negative, model, unload, seed, steps, cfg):
+	def process(self, positive, negative, model, seed, steps, cfg):
 		progress = ProgressBar(steps)
 
 		def callback(step, time_step, latents):
@@ -102,10 +102,6 @@ class StageI:
 			output_type = "pt",
 		).images.permute(0, 2, 3, 1).cpu()
 
-		if unload:
-			del pipe
-			gc.collect()
-
 		return (image,)
 
 
@@ -118,7 +114,6 @@ class StageII:
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
 				"model": (["M", "L"], {"default": "L"}),
-				"unload": ([False, True], {"default": False}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -129,7 +124,7 @@ class StageII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, image, positive, negative, model, unload, seed, steps, cfg):
+	def process(self, image, positive, negative, model, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 
@@ -160,10 +155,6 @@ class StageII:
 			output_type = "pt",
 		).images.permute(0, 2, 3, 1).cpu()
 
-		if unload:
-			del pipe
-			gc.collect()
-
 		return (image,)
 
 
@@ -173,7 +164,6 @@ class StageIII:
 		return {
 			"required": {
 				"image": ("IMAGE",),
-				"unload": ([False, True], {"default": False}),
 				"tile": ([False, True], {"default": False}),
 				"tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
@@ -228,9 +218,5 @@ class StageIII:
 			callback = callback,
 			output_type = "pt",
 		).images.permute(0, 2, 3, 1).cpu()
-
-		if unload:
-			del pipe
-			gc.collect()
 
 		return (image,)
