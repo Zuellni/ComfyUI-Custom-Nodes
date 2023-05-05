@@ -178,7 +178,7 @@ class StageIII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, image, unload, tile, tile_size, positive, negative, seed, steps, cfg):
+	def process(self, image, tile, tile_size, positive, negative, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		batch_size = image.shape[0]
 		progress = ProgressBar(steps)
