@@ -34,7 +34,7 @@ class Encode:
 
 		pipe = DiffusionPipeline.from_pretrained(
 			"DeepFloyd/IF-I-XL-v1.0",
-			text_encoder = encoder,
+			text_encoder = text_encoder,
 			requires_safety_checker = False,
 			safety_checker = None,
 			unet = None,
