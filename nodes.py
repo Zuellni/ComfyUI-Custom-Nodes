@@ -101,7 +101,7 @@ class Share:
 		return {
 			"required": {
 				"images": ("IMAGE",),
-				"output_dir": ("STRING", {"default": "share"}),
+				"output_dir": ("STRING", {"default": ""}),
 				"prefix": ("STRING", {"default": "share"}),
 			}
 		}
