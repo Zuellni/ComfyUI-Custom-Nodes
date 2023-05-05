@@ -1,3 +1,4 @@
 diffusers
 transformers
-https://github.com/zuellni/bitsandbytes/archive/main.zip
+bitsandbytes; platform_system != "Windows"
+https://github.com/zuellni/bitsandbytes/archive/main.zip; platform_system == "Windows"
