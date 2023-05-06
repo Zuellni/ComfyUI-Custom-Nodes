@@ -25,10 +25,10 @@ NODE_CLASS_MAPPINGS = {
 	# Latent
 	"VAE Decode": Custom.Decode,
 	"VAE Encode": Custom.Encode,
-	"Latent Repeat": Custom.Repeat,
 
 	# Multi
 	"Multi Noise": Custom.Noise,
+	"Multi Repeat": Custom.Repeat,
 	"Multi Resize": Custom.Resize,
 
 	# DeepFloyd

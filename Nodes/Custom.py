@@ -166,22 +166,29 @@ class Repeat:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"latent": ("LATENT",),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+			},
+			"optional": {
+				"image": ("IMAGE",),
+				"latent": ("LATENT",),
 			}
 		}
 
-	CATEGORY = "Zuellni/Latent"
+	CATEGORY = "Zuellni/Multi"
 	FUNCTION = "process"
-	RETURN_TYPES = ("LATENT",)
+	RETURN_TYPES = ("IMAGE", "LATENT",)
 
-	def process(self, latent, batch_size):
-		latent = latent["samples"]
-
+	def process(self, batch_size, image = None, latent = None):
 		if batch_size > 1:
-			latent = latent.repeat(batch_size, 1, 1, 1)
+			if image is not None:
+				image = image.repeat(batch_size, 1, 1, 1)
 
-		return ({"samples": latent},)
+			if latent is not None:
+				latent = latent["samples"]
+				latent = latent.repeat(batch_size, 1, 1, 1)
+				latent = {"samples": latent}
+
+		return (image, latent,)
 
 
 class Noise:
