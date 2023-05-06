@@ -7,7 +7,7 @@ git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
 pip install -r custom_nodes\Zuellni\requirements.txt
 ```
 ## Custom Nodes
-A bunch of custom/modded nodes. Most work with multiple images/latents.
+A bunch of custom/modded nodes. Most work with multiple images/latents. All required models are currently downloaded to the huggingface `.cache` directory.
 ### Aesthetic Filter
 Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If both are `False` then it acts like `LatentFromBatch` and returns 1 image with 1-based index.
 ### Aesthetic Select
