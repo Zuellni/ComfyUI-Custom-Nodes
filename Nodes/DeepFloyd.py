@@ -102,7 +102,7 @@ class StageI:
 			guidance_scale = cfg,
 			callback = callback,
 			output_type = "pt",
-		).images.permute(0, 2, 3, 1).cpu()
+		).images.permute(0, 2, 3, 1).to(torch.float32)
 
 		return (image,)
 
@@ -156,7 +156,7 @@ class StageII:
 			guidance_scale = cfg,
 			callback = callback,
 			output_type = "pt",
-		).images.permute(0, 2, 3, 1).cpu()
+		).images.permute(0, 2, 3, 1).to(torch.float32)
 
 		return (image,)
 
@@ -221,6 +221,6 @@ class StageIII:
 			guidance_scale = cfg,
 			callback = callback,
 			output_type = "pt",
-		).images.permute(0, 2, 3, 1).cpu()
+		).images.permute(0, 2, 3, 1).to(torch.float32)
 
 		return (image,)
