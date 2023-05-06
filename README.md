@@ -25,11 +25,11 @@ Allows for repeating image/latent `x` times, similar to `VAE Encode`.
 ### Multi Resize
 Similar to `LatentUpscale` but takes `scale` instead of width/height. Works with images and latents.
 ## DeepFloyd Nodes
-A poor man's implementation of [IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 13GB should be enough to run without unloading the text encoder.
+A poor man's implementation of [IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 13GB should be enough to run without unloading the text encoder. 12GB isn't.
 ### IF Encode
 Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Higher `batch_size` results in more images. <ins>Requires more than 8GB of VRAM</ins>, as well as [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) to load with 8-bit precision. CPU offloading currently doesn't seem to work. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 ### IF Stage I
-Takes the prompt embeds from text encoder, as well as `seed`, `steps, and `cfg`, and returns `64x64px` images which can be used with `IF Stage II` or other nodes.
+Takes the prompt embeds from `IF Encode`, as well as `seed`, `steps, and `cfg`, and returns `64x64px` images which can be used with `IF Stage II` or other nodes.
 ### IF Stage II
 As above, but also takes `Stage I` or other images. Returns `256x256px` images which can be used with `IF Stage III` or other nodes such as upscalers or samplers. Images larger than `64x64px` will still result in `256x256px` output.
 ### IF Stage III
