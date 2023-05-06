@@ -6,15 +6,16 @@ Clone the repository to `custom_nodes` in your ComfyUI directory and install the
 git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
 pip install -r custom_nodes\Zuellni\requirements.txt
 ```
-To update use `git -C custom_nodes\Zuellni pull` assuming you're in the main ComfyUI directory.
+To update use `git -C custom_nodes\Zuellni pull` assuming you're in the main ComfyUI directory. All required models are currently downloaded to the huggingface `.cache` directory.
 ## Custom Nodes
-A bunch of custom/modded nodes. Most work with multiple images/latents. All required models are currently downloaded to the huggingface `.cache` directory.
+![custom nodes workflow](https://user-images.githubusercontent.com/123005779/236645772-5a376749-0cbf-47cb-a32e-23d000a36153.png)
+A bunch of custom/modded nodes. Most work with both batched images and latents. Example workflow featuring aesthetic filter embedded in the image above.
 ### Aesthetic Filter
-Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If both are `False` then it acts like `LatentFromBatch` and returns 1 image with 1-based index.
+Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If both are `False` then acts like `LatentFromBatch` and returns 1 image with 1-based index.
 ### Aesthetic Select
 Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
 ### Share Image
-Saves images without metadata in specified directory. Counter resets on restart. Good for sharing without having to remove prompts manually.
+Saves images without metadata in specified directory. Counter resets on restart. Good for sharing images without having to remove prompts manually.
 ### VAE Decode
 Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error but just here for the sake of completeness.
 ### VAE Encode
@@ -26,8 +27,8 @@ Allows for repeating image/latent `x` times, similar to `VAE Encode`.
 ### Multi Resize
 Similar to `LatentUpscale` but takes `scale` instead of width/height. Works with images and latents.
 ## DeepFloyd Nodes
-![deepfloyd](https://user-images.githubusercontent.com/123005779/236634149-5e6c9b81-ffb7-440f-a2dd-0c26903e2263.png)
-A poor man's implementation of [DeepFloyd-IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 13GB should be enough to run without unloading the text encoder. Example workflow embedded in the image above.
+![deepfloyd nodes workflow](https://user-images.githubusercontent.com/123005779/236634149-5e6c9b81-ffb7-440f-a2dd-0c26903e2263.png)
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 13GB should be enough to run without unloading the text encoder. Example workflow embedded in the image above.
 ### IF Encode
 Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Higher `batch_size` results in more images. <ins>Requires more than 8GB of VRAM</ins>, as well as [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) to load with 8-bit precision. CPU offloading currently doesn't seem to work. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 ### IF Stage I
