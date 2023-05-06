@@ -6,6 +6,7 @@ Clone the repository to `custom_nodes` in your ComfyUI directory and install the
 git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
 pip install -r custom_nodes\Zuellni\requirements.txt
 ```
+To update use `git -C custom_nodes\Zuellni pull` assuming you're in the main ComfyUI directory.
 ## Custom Nodes
 A bunch of custom/modded nodes. Most work with multiple images/latents. All required models are currently downloaded to the huggingface `.cache` directory.
 ### Aesthetic Filter
