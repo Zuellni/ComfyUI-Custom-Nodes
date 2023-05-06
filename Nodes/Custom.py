@@ -104,14 +104,14 @@ class Save:
 	RETURN_TYPES = ()
 
 	def process(self, images, output_dir, prefix):
+		output_dir = Path(output_dir)
+		output_dir.mkdir(parents = True, exist_ok = True)
+
 		for image in images:
 			image = 255.0 * image.cpu().numpy()
 			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-			output_dir = Path(output_dir)
-
-			if output_dir.exists():
-				image.save(output_dir / f"{prefix}_{Save.COUNTER:05}.png", optimize = True)
-				Save.COUNTER += 1
+			image.save(output_dir / f"{prefix}_{Save.COUNTER:05}.png", optimize = True)
+			Save.COUNTER += 1
 
 		return (None,)
 
