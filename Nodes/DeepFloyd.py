@@ -13,7 +13,6 @@ class Encode:
 		return {
 			"required": {
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
-				"load_in_8bit": ([False, True], {"default": False}),
 				"unload": ([False, True], {"default": False}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
@@ -24,13 +23,13 @@ class Encode:
 	FUNCTION = "process"
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, batch_size, unload, load_in_8bit, positive, negative):
+	def process(self, batch_size, unload, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
 			"DeepFloyd/IF-I-XL-v1.0",
 			subfolder = "text_encoder",
 			variant = "fp16",
 			torch_dtype = torch.float16,
-			load_in_8bit = load_in_8bit,
+			load_in_8bit = True,
 			device_map = "auto",
 		)
 
@@ -38,6 +37,7 @@ class Encode:
 			"DeepFloyd/IF-I-XL-v1.0",
 			text_encoder = text_encoder,
 			requires_safety_checker = False,
+			feature_extractor = None,
 			safety_checker = None,
 			unet = None,
 			watermarker = None,
@@ -85,6 +85,7 @@ class StageI:
 			variant = "fp16",
 			torch_dtype = torch.float16,
 			requires_safety_checker = False,
+			feature_extractor = None,
 			safety_checker = None,
 			text_encoder = None,
 			watermarker = None,
@@ -137,6 +138,7 @@ class StageII:
 			variant = "fp16",
 			torch_dtype = torch.float16,
 			requires_safety_checker = False,
+			feature_extractor = None,
 			safety_checker = None,
 			text_encoder = None,
 			watermarker = None,
@@ -195,6 +197,7 @@ class StageIII:
 			"stabilityai/stable-diffusion-x4-upscaler",
 			torch_dtype = torch.float16,
 			requires_safety_checker = False,
+			feature_extractor = None,
 			safety_checker = None,
 			watermarker = None,
 		)
