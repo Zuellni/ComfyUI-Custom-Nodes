@@ -29,8 +29,8 @@ class Filter:
 		if not aesthetic and not waifu:
 			return (images[count - 1].unsqueeze(0), [count - 1],)
 
-		a_model = pipeline("image-classification", "cafeai/cafe_aesthetic", device = get_torch_device())
-		w_model = pipeline("image-classification", "cafeai/cafe_waifu", device = get_torch_device())
+		aesthetic_pipe = pipeline("image-classification", "cafeai/cafe_aesthetic", device = get_torch_device())
+		waifu_pipe = pipeline("image-classification", "cafeai/cafe_waifu", device = get_torch_device())
 		scores = {}
 
 		for index, image in enumerate(images):
@@ -39,24 +39,24 @@ class Filter:
 			score = 0.0
 
 			if aesthetic:
-				data = a_model(image, top_k = 2)
+				data = aesthetic_pipe(image, top_k = 2)
 
 				for item in data:
 					score += item["score"] * (1.0 if item["label"] == "aesthetic" else -1.0)
 
 			if waifu:
-				data = w_model(image, top_k = 2)
+				data = waifu_pipe(image, top_k = 2)
 
 				for item in data:
 					score += item["score"] * (1.0 if item["label"] == "waifu" else -1.0)
 
 			scores[index] = score
 
-		sorted_scores = sorted(scores.items(), key = lambda x: x[1], reverse = True)
-		top_images = [images[score[0]] for score in sorted_scores[:count]]
-		top_images = torch.stack(top_images)
-		top_list = [score[0] for score in sorted_scores[:count]]
-		return (top_images, top_list,)
+		scores = sorted(scores.items(), key = lambda x: x[1], reverse = True)
+		images = [images[score[0]] for score in scores[:count]]
+		images = torch.stack(images)
+		list = [score[0] for score in scores[:count]]
+		return (images, list,)
 
 
 class Select:
