@@ -33,7 +33,7 @@ Allows for repeating images/latents `x` times, similar to `VAE Encode`.
 Similar to `LatentUpscale` but takes `scale` instead of width/height. Works with both images and latents.
 ### DeepFloyd Nodes
 ![deepfloyd nodes workflow](https://user-images.githubusercontent.com/123005779/236634149-5e6c9b81-ffb7-440f-a2dd-0c26903e2263.png)
-A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 14GB should be enough to run without unloading the text encoder. Example workflow embedded in the image above.
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. Example workflow embedded in the image above.
 #### IF Encode
 Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Higher `batch_size` results in more images. <ins>Requires more than 8GB of VRAM</ins>, as well as [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) to load with 8-bit precision. CPU offloading currently doesn't seem to work. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 #### IF Stage I

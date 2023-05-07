@@ -1,4 +1,4 @@
-from comfy.model_management import get_torch_device, xformers_enabled
+from comfy.model_management import xformers_enabled
 from comfy.utils import ProgressBar
 
 from transformers import T5EncoderModel
@@ -12,7 +12,6 @@ class Encode:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
 				"unload": ([False, True], {"default": False}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
@@ -23,7 +22,7 @@ class Encode:
 	FUNCTION = "process"
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, batch_size, unload, positive, negative):
+	def process(self, unload, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
 			"DeepFloyd/IF-I-XL-v1.0",
 			subfolder = "text_encoder",
@@ -49,7 +48,6 @@ class Encode:
 		positive, negative = pipe.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
-			num_images_per_prompt = batch_size,
 		)
 
 		if unload:
@@ -67,6 +65,7 @@ class StageI:
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
 				"model": (["M", "L", "XL"], {"default": "XL"}),
+				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -77,7 +76,7 @@ class StageI:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, positive, negative, model, seed, steps, cfg):
+	def process(self, positive, negative, model, batch_size, seed, steps, cfg):
 		progress = ProgressBar(steps)
 
 		def callback(step, time_step, latents):
@@ -92,9 +91,10 @@ class StageI:
 			safety_checker = None,
 			text_encoder = None,
 			watermarker = None,
-		).to(get_torch_device())
+		)
 
 		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
+		pipe.enable_model_cpu_offload()
 
 		if xformers_enabled():
 			pipe.enable_xformers_memory_efficient_attention()
@@ -103,8 +103,9 @@ class StageI:
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
 			generator = torch.manual_seed(seed),
-			num_inference_steps = steps,
 			guidance_scale = cfg,
+			num_images_per_prompt = batch_size,
+			num_inference_steps = steps,
 			callback = callback,
 			output_type = "pt",
 		).images
@@ -136,6 +137,11 @@ class StageII:
 	def process(self, image, positive, negative, model, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
+		batch_size = image.shape[0]
+
+		if batch_size > 1:
+			positive = positive.repeat(batch_size, 1, 1)
+			negative = negative.repeat(batch_size, 1, 1)
 
 		def callback(step, time_step, latents):
 			progress.update_absolute(step)
@@ -149,9 +155,10 @@ class StageII:
 			safety_checker = None,
 			text_encoder = None,
 			watermarker = None,
-		).to(get_torch_device())
+		)
 
 		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
+		pipe.enable_model_cpu_offload()
 
 		if xformers_enabled():
 			pipe.enable_xformers_memory_efficient_attention()
@@ -161,8 +168,8 @@ class StageII:
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
 			generator = torch.manual_seed(seed),
-			num_inference_steps = steps,
 			guidance_scale = cfg,
+			num_inference_steps = steps,
 			callback = callback,
 			output_type = "pt",
 		).images.cpu().permute(0, 2, 3, 1).float()
@@ -192,15 +199,15 @@ class StageIII:
 
 	def process(self, image, tile, tile_size, positive, negative, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
-		batch_size = image.shape[0]
 		progress = ProgressBar(steps)
-
-		def callback(step, time_step, latents):
-			progress.update_absolute(step)
+		batch_size = image.shape[0]
 
 		if batch_size > 1:
 			positive = [positive] * batch_size
 			negative = [negative] * batch_size
+
+		def callback(step, time_step, latents):
+			progress.update_absolute(step)
 
 		pipe = DiffusionPipeline.from_pretrained(
 			"stabilityai/stable-diffusion-x4-upscaler",
@@ -209,9 +216,10 @@ class StageIII:
 			feature_extractor = None,
 			safety_checker = None,
 			watermarker = None,
-		).to(get_torch_device())
+		)
 
 		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
+		pipe.enable_model_cpu_offload()
 
 		if xformers_enabled():
 			pipe.enable_xformers_memory_efficient_attention()
@@ -225,8 +233,8 @@ class StageIII:
 			prompt = positive,
 			negative_prompt = negative,
 			generator = torch.manual_seed(seed),
-			num_inference_steps = steps,
 			guidance_scale = cfg,
+			num_inference_steps = steps,
 			callback = callback,
 			output_type = "pt",
 		).images.cpu().permute(0, 2, 3, 1).float()
