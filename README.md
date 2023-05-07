@@ -1,12 +1,15 @@
 # Custom nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI).
 
 ## Installation
-Clone the repository to `custom_nodes` in your ComfyUI directory and install the requirements.
+Clone the repository to `custom_nodes` in your ComfyUI directory and install the requirements:
 ```
 git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
-pip install -r custom_nodes\Zuellni\requirements.txt
+pip install -U -r custom_nodes\Zuellni\requirements.txt
 ```
-To update use `git -C custom_nodes\Zuellni pull` assuming you're in the main ComfyUI directory.  
+To update execute the following command in the same directory:
+```
+git -C custom_nodes\Zuellni pull
+```
 All required models are currently downloaded to the huggingface `.cache` directory.
 ## Custom Nodes
 ![custom nodes workflow](https://user-images.githubusercontent.com/123005779/236645772-5a376749-0cbf-47cb-a32e-23d000a36153.png)
@@ -22,14 +25,14 @@ Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDeco
 ### VAE Encode
 As above, but adds `batch_size`. Allows for loading 1 image and denoising it `x` times without having to create multiple `KSampler` nodes.
 ### Multi Noise
-Adds random black and white/color noise to image/latent.
+Adds random black and white/color noise to images/latents.
 ### Multi Repeat
-Allows for repeating image/latent `x` times, similar to `VAE Encode`.
+Allows for repeating images/latents `x` times, similar to `VAE Encode`.
 ### Multi Resize
-Similar to `LatentUpscale` but takes `scale` instead of width/height. Works with images and latents.
+Similar to `LatentUpscale` but takes `scale` instead of width/height. Works with both images and latents.
 ## DeepFloyd Nodes
 ![deepfloyd nodes workflow](https://user-images.githubusercontent.com/123005779/236634149-5e6c9b81-ffb7-440f-a2dd-0c26903e2263.png)
-A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 13GB should be enough to run without unloading the text encoder. Example workflow embedded in the image above.
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>. 14GB should be enough to run without unloading the text encoder. Example workflow embedded in the image above.
 ### IF Encode
 Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Higher `batch_size` results in more images. <ins>Requires more than 8GB of VRAM</ins>, as well as [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) to load with 8-bit precision. CPU offloading currently doesn't seem to work. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 ### IF Stage I
