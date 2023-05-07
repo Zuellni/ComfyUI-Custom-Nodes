@@ -43,6 +43,9 @@ class Encode:
 			watermarker = None,
 		)
 
+		if xformers_enabled():
+			pipe.enable_xformers_memory_efficient_attention()
+
 		positive, negative = pipe.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
@@ -89,10 +92,12 @@ class StageI:
 			safety_checker = None,
 			text_encoder = None,
 			watermarker = None,
-		)
+		).to(get_torch_device())
 
-		pipe.to(get_torch_device())
-		pipe.unet.to(memory_format = torch.channels_last)
+		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
+
+		if xformers_enabled():
+			pipe.enable_xformers_memory_efficient_attention()
 
 		image = pipe(
 			prompt_embeds = positive,
@@ -144,10 +149,12 @@ class StageII:
 			safety_checker = None,
 			text_encoder = None,
 			watermarker = None,
-		)
+		).to(get_torch_device())
 
-		pipe.to(get_torch_device())
-		pipe.unet.to(memory_format = torch.channels_last)
+		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
+
+		if xformers_enabled():
+			pipe.enable_xformers_memory_efficient_attention()
 
 		image = pipe(
 			image = image,
@@ -202,10 +209,9 @@ class StageIII:
 			feature_extractor = None,
 			safety_checker = None,
 			watermarker = None,
-		)
+		).to(get_torch_device())
 
-		pipe.to(get_torch_device())
-		pipe.unet.to(memory_format = torch.channels_last)
+		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
 
 		if xformers_enabled():
 			pipe.enable_xformers_memory_efficient_attention()
