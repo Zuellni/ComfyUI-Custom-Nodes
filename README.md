@@ -43,4 +43,4 @@ Takes the prompt embeds from `IF Encoder` and returns `64x64px` images which can
 #### IF Stage II
 As above, but also takes `Stage I` or other images. Returns `256x256px` images which can be used with `IF Stage III` or other nodes such as upscalers or samplers. Images larger than `64x64px` will still result in `256x256px` output.
 #### IF Stage III
-Upscales `Stage II` or other images `4 times`, resulting in `1024x1024px` images for `Stage II`. Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` additionally allows for upscaling larger images than normally possible, around `768x768px` base with 12GB of VRAM.
+Upscales `Stage II` or other images `4 times`, resulting in `1024x1024px` images for `Stage II`. Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` additionally allows for upscaling larger images than normally possible.
