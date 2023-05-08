@@ -24,8 +24,8 @@ NODE_CLASS_MAPPINGS = {
 	"Share Image": Custom.Save,
 
 	# Latent
-	"VAE Decoder": Custom.Decode,
-	"VAE Encoder": Custom.Encode,
+	"Latent Decoder": Custom.Decode,
+	"Latent Encoder": Custom.Encode,
 
 	# Multi
 	"Multi Noise": Custom.Noise,

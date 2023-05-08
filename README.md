@@ -22,16 +22,16 @@ Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](
 Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
 #### Share Image
 Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
-#### VAE Decoder
+#### Latent Decoder
 Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error but just here for the sake of completeness.
-#### VAE Encoder
+#### Latent Encoder
 As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple `KSampler` nodes.
 #### Multi Noise
 Adds random black and white/color noise to images/latents.
 #### Multi Repeat
-Allows for repeating images/latents `x` times, similar to `VAE Encoder`.
+Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
 #### Multi Resize
-Similar to `LatentUpscale` but takes `scale` instead of width/height. Works with both images and latents.
+Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 ### DeepFloyd Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently <ins>require more than 8GB of VRAM</ins>.
 #### IF Loader
