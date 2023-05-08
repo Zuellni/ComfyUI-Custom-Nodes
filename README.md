@@ -17,8 +17,9 @@ Name | Description
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Filter`.
 Aesthetic&nbsp;Filter | Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image with 1-based index.
 Aesthetic&nbsp;Select | Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
-Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error but just Latent Encode | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple `KSampler` nodes.
-Multi&nbsp;Noise | Adds random black and white/color noise to images/latents.
+Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error but just here for the sake of completeness.
+Latent&nbsp;Encode | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
+Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
