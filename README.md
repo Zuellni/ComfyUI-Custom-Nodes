@@ -25,7 +25,7 @@ Saves images without metadata in specified directory. Counter resets on restart.
 #### VAE Decoder
 Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error but just here for the sake of completeness.
 #### VAE Encoder
-As above, but adds `batch_size`. Allows for loading 1 image and denoising it `x` times without having to create multiple `KSampler` nodes.
+As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple `KSampler` nodes.
 #### Multi Noise
 Adds random black and white/color noise to images/latents.
 #### Multi Repeat
