@@ -10,13 +10,15 @@ To update execute the following command in the same directory:
 git -C custom_nodes\Zuellni pull
 ```
 All required models are downloaded to the Hugging Face `.cache` directory.
-## Custom Nodes
-A bunch of custom/modded nodes.
+## Aesthetic Nodes
 Name | Description
 :--- | :---
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Filter`.
 Aesthetic&nbsp;Filter | Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image with 1-based index.
 Aesthetic&nbsp;Select | Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
+## Modded Nodes
+Name | Description
+:--- | :---
 Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
 Multi&nbsp;Noise | Adds random noise to images/latents.
@@ -24,7 +26,7 @@ Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `L
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
 ## IF Nodes
-A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently require more than 8GB of VRAM.
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All stages with text encoder unloading enabled require more than 8GB of VRAM.
 Name | Description
 :--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes.
