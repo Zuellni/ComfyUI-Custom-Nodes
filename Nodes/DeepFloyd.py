@@ -12,7 +12,7 @@ class Load:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"name": (["M", "L", "XL"], {"default": "M"}),
+				"model": (["M", "L", "XL"], {"default": "M"}),
 				"stage": (["I", "II", "III"], {"default": "I"}),
 			},
 		}
@@ -21,7 +21,7 @@ class Load:
 	FUNCTION = "process"
 	RETURN_TYPES = ("PIPE",)
 
-	def process(self, name, stage):
+	def process(self, model, stage):
 		pipe = None
 
 		if stage == "III":
@@ -35,7 +35,7 @@ class Load:
 			)
 		else:
 			pipe = DiffusionPipeline.from_pretrained(
-				f"DeepFloyd/IF-{stage}-{name}-v1.0",
+				f"DeepFloyd/IF-{stage}-{model}-v1.0",
 				variant = "fp16",
 				torch_dtype = torch.float16,
 				requires_safety_checker = False,

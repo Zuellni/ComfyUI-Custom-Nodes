@@ -15,7 +15,7 @@ class Load:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"name": (["aesthetic", "waifu"], {"default": "aesthetic"}),
+				"model": (["aesthetic", "waifu"], {"default": "aesthetic"}),
 			},
 		}
 
@@ -23,8 +23,8 @@ class Load:
 	FUNCTION = "process"
 	RETURN_TYPES = ("PIPE",)
 
-	def process(self, name):
-		return (pipeline("image-classification", f"cafeai/cafe_{name}", device = get_torch_device()),)
+	def process(self, model):
+		return (pipeline("image-classification", f"cafeai/cafe_{model}", device = get_torch_device()),)
 
 
 class Filter:
