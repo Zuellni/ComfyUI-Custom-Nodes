@@ -36,8 +36,8 @@ class Filter:
 				"count": ("INT", {"default": 1, "min": 1, "max": 64}),
 			},
 			"optional": {
-				"aesthetic": ("MODEL",),
-				"waifu": ("MODEL",),
+				"aesthetic": ("PIPE",),
+				"waifu": ("PIPE",),
 			},
 		}
 
