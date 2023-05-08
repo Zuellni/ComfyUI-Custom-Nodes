@@ -16,15 +16,6 @@ Name | Description
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Filter`.
 Aesthetic&nbsp;Filter | Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image with 1-based index.
 Aesthetic&nbsp;Select | Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
-## Modded Nodes
-Name | Description
-:--- | :---
-Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
-Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
-Multi&nbsp;Noise | Adds random noise to images/latents.
-Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
-Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
-Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
 ## IF Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All stages with text encoder unloading enabled require more than 8GB of VRAM.
 Name | Description
@@ -34,3 +25,12 @@ IF&nbsp;Encoder | Encodes positive/negative prompts for use with `IF Stage I` an
 IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns `64x64px` images which can be used with `IF Stage II` or other nodes.
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images. Returns `256x256px` images which can be used with `IF Stage III` or other nodes such as upscalers or samplers. Images larger than `64x64px` will still result in `256x256px` output.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images 4 times. Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` additionally allows for upscaling larger images than normally possible.
+## Other Nodes
+Name | Description
+:--- | :---
+Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
+Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
+Multi&nbsp;Noise | Adds random noise to images/latents.
+Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
+Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
+Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
