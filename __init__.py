@@ -16,6 +16,7 @@ filterwarnings("ignore", category = UserWarning, message = "TypedStorage is depr
 
 NODE_CLASS_MAPPINGS = {
 	# Aesthetic
+	"Aesthetic Load": Custom.Load,
 	"Aesthetic Filter": Custom.Filter,
 	"Aesthetic Select": Custom.Select,
 
@@ -32,6 +33,7 @@ NODE_CLASS_MAPPINGS = {
 	"Multi Resize": Custom.Resize,
 
 	# DeepFloyd
+	"IF Load": DeepFloyd.Load,
 	"IF Encode": DeepFloyd.Encode,
 	"IF Stage I": DeepFloyd.StageI,
 	"IF Stage II": DeepFloyd.StageII,

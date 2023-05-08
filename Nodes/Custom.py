@@ -9,6 +9,23 @@ import numpy as np
 import torch
 
 
+class Load:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"model": (["aesthetic", "waifu"], {"default": "aesthetic"}),
+			},
+		}
+
+	CATEGORY = "Zuellni/Aesthetic"
+	FUNCTION = "process"
+	RETURN_TYPES = ("MODEL",)
+
+	def process(self, model):
+		return (pipeline("image-classification", f"cafeai/cafe_{model}", device = get_torch_device()),)
+
+
 class Filter:
 	@classmethod
 	def INPUT_TYPES(s):
@@ -16,21 +33,21 @@ class Filter:
 			"required": {
 				"images": ("IMAGE",),
 				"count": ("INT", {"default": 1, "min": 1, "max": 64}),
-				"aesthetic": ([False, True], {"default": True}),
-				"waifu": ([False, True], {"default": True}),
-			}
+			},
+			"optional": {
+				"aesthetic": ("MODEL",),
+				"waifu": ("MODEL",),
+			},
 		}
 
 	CATEGORY = "Zuellni/Aesthetic"
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE", "LIST",)
 
-	def process(self, images, count, aesthetic, waifu):
+	def process(self, images, count, aesthetic = None, waifu = None):
 		if not aesthetic and not waifu:
 			return (images[count - 1].unsqueeze(0), [count - 1],)
 
-		aesthetic_pipe = pipeline("image-classification", "cafeai/cafe_aesthetic", device = get_torch_device())
-		waifu_pipe = pipeline("image-classification", "cafeai/cafe_waifu", device = get_torch_device())
 		scores = {}
 
 		for index, image in enumerate(images):
@@ -39,13 +56,13 @@ class Filter:
 			score = 0.0
 
 			if aesthetic:
-				data = aesthetic_pipe(image, top_k = 2)
+				data = aesthetic(image, top_k = 2)
 
 				for item in data:
 					score += item["score"] * (1.0 if item["label"] == "aesthetic" else -1.0)
 
 			if waifu:
-				data = waifu_pipe(image, top_k = 2)
+				data = waifu(image, top_k = 2)
 
 				for item in data:
 					score += item["score"] * (1.0 if item["label"] == "waifu" else -1.0)
@@ -66,7 +83,7 @@ class Select:
 			"required": {
 				"latent": ("LATENT",),
 				"list": ("LIST",),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Aesthetic"
@@ -94,7 +111,7 @@ class Save:
 				"images": ("IMAGE",),
 				"output_dir": ("STRING", {"default": get_output_directory()}),
 				"prefix": ("STRING", {"default": "clean"}),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Image"
@@ -124,7 +141,7 @@ class Decode:
 				"latent": ("LATENT",),
 				"vae": ("VAE",),
 				"tile": ([False, True], {"default": False}),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Latent"
@@ -144,7 +161,7 @@ class Encode:
 				"vae": ("VAE",),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
 				"tile": ([False, True], {"default": False}),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Latent"
@@ -171,7 +188,7 @@ class Repeat:
 			"optional": {
 				"image": ("IMAGE",),
 				"latent": ("LATENT",),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Multi"
@@ -196,28 +213,27 @@ class Noise:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"amount": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01}),
-				"color": ([False, True], {"default": False}),
+				"strength": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01}),
 			},
 			"optional": {
 				"image": ("IMAGE",),
 				"latent": ("LATENT",),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Multi"
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE", "LATENT",)
 
-	def process(self, amount, color, image = None, latent = None):
+	def process(self, strength, image = None, latent = None):
 		if amount > 0.0:
 			if image is not None:
-				noise = torch.randn(image.shape[0], image.shape[1], image.shape[2], image.shape[3] if color else 1)
+				noise = torch.randn(image.shape)
 				image = image + noise * amount
 
 			if latent is not None:
 				latent = latent["samples"]
-				noise = torch.randn(latent.shape[0], latent.shape[1], latent.shape[2], latent.shape[3] if color else 1)
+				noise = torch.randn(latent.shape)
 				latent = {"samples": latent + noise * amount}
 
 		return (image, latent,)
@@ -235,7 +251,7 @@ class Resize:
 			"optional": {
 				"image": ("IMAGE",),
 				"latent": ("LATENT",),
-			}
+			},
 		}
 
 	CATEGORY = "Zuellni/Multi"
