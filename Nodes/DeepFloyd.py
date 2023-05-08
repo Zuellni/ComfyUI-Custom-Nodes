@@ -92,7 +92,7 @@ class Encode:
 
 		positive, negative = model.encode_prompt(
 			prompt = positive,
-			negative_prompt = negative
+			negative_prompt = negative,
 		)
 
 		if unload:

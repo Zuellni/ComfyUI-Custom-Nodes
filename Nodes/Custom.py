@@ -226,15 +226,15 @@ class Noise:
 	RETURN_TYPES = ("IMAGE", "LATENT",)
 
 	def process(self, strength, image = None, latent = None):
-		if amount > 0.0:
+		if strength > 0.0:
 			if image is not None:
 				noise = torch.randn(image.shape)
-				image = image + noise * amount
+				image = image + noise * strength
 
 			if latent is not None:
 				latent = latent["samples"]
 				noise = torch.randn(latent.shape)
-				latent = {"samples": latent + noise * amount}
+				latent = {"samples": latent + noise * strength}
 
 		return (image, latent,)
 
