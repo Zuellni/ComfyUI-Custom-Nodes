@@ -22,7 +22,7 @@ Multi&nbsp;Noise | Adds random black and white/color noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
-## DeepFloyd Nodes
+## IF Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently require more than 8GB of VRAM.
 Name | Description
 :--- | :---
