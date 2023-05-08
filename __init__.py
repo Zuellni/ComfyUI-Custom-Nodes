@@ -16,28 +16,29 @@ filterwarnings("ignore", category = UserWarning, message = "TypedStorage is depr
 
 NODE_CLASS_MAPPINGS = {
 	# Aesthetic
-	"Aesthetic Loader": Custom.Load,
-	"Aesthetic Filter": Custom.Filter,
-	"Aesthetic Select": Custom.Select,
+	"Aesthetic Loader": Custom.AestheticLoader,
+	"Aesthetic Filter": Custom.AestheticFilter,
+	"Aesthetic Select": Custom.AestheticSelect,
 
 	# Image
-	"Share Image": Custom.Save,
+	"Load Folder": Custom.LoadFolder,
+	"Share Image": Custom.ShareImage,
 
 	# Latent
-	"Latent Decoder": Custom.Decode,
-	"Latent Encoder": Custom.Encode,
+	"Latent Decoder": Custom.LatentDecoder,
+	"Latent Encoder": Custom.LatentEncoder,
 
 	# Model
-	"Token Merge": Custom.Merge,
+	"Token Merge": Custom.TokenMerge,
 
 	# Multi
-	"Multi Noise": Custom.Noise,
-	"Multi Repeat": Custom.Repeat,
-	"Multi Resize": Custom.Resize,
+	"Multi Noise": Custom.MultiNoise,
+	"Multi Repeat": Custom.MultiRepeat,
+	"Multi Resize": Custom.MultiResize,
 
 	# DeepFloyd
-	"IF Loader": DeepFloyd.Load,
-	"IF Encoder": DeepFloyd.Encode,
+	"IF Loader": DeepFloyd.Loader,
+	"IF Encoder": DeepFloyd.Encoder,
 	"IF Stage I": DeepFloyd.StageI,
 	"IF Stage II": DeepFloyd.StageII,
 	"IF Stage III": DeepFloyd.StageIII,

@@ -7,7 +7,7 @@ import torch
 import gc
 
 
-class Load:
+class Loader:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -54,7 +54,7 @@ class Load:
 		return (pipe,)
 
 
-class Encode:
+class Encoder:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {

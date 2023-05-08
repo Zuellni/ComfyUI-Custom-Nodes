@@ -1,16 +1,19 @@
+from folder_paths import get_input_directory, get_output_directory
 from comfy.model_management import get_torch_device
-from folder_paths import get_output_directory
 from nodes import VAEEncode
+
+import torchvision.transforms as T
+import torch.nn.functional as F
+import torch
 
 from transformers import pipeline
 from tomesd import apply_patch
 from pathlib import Path
 from PIL import Image
 import numpy as np
-import torch
 
 
-class Load:
+class AestheticLoader:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -27,7 +30,7 @@ class Load:
 		return (pipeline("image-classification", f"cafeai/cafe_{model}", device = get_torch_device()),)
 
 
-class Filter:
+class AestheticFilter:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -77,7 +80,7 @@ class Filter:
 		return (images, list,)
 
 
-class Select:
+class AestheticSelect:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -104,7 +107,43 @@ class Select:
 		return ({"samples": samples},)
 
 
-class Save:
+class LoadFolder:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"input_dir": ("STRING", {"default": get_input_directory()}),
+				"file_type": (["gif", "jpg", "png"], {"default": "png"}),
+			},
+		}
+
+	CATEGORY = "Zuellni/Image"
+	FUNCTION = "process"
+	RETURN_TYPES = ("IMAGE",)
+
+	def process(self, input_dir, file_type):
+		input_dir = Path(input_dir)
+		images = []
+
+		if input_dir.is_dir():
+			for image in list(input_dir.glob(f"*.{file_type}")):
+				image = Image.open(image)
+				image = T.ToTensor()(image)
+				images.append(image)
+
+			if images:
+				if len(images) > 1:
+					max_h = max([image.shape[1] for image in images])
+					max_w = max([image.shape[2] for image in images])
+					images = [F.pad(image, [0, max_w - image.shape[2], 0, max_h - image.shape[1]]) for image in images]
+
+				images = torch.stack(images)
+				images = images.permute(0, 2, 3, 1)
+
+		return (images,)
+
+
+class ShareImage:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -134,7 +173,7 @@ class Save:
 		return (None,)
 
 
-class Decode:
+class LatentDecoder:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -153,7 +192,7 @@ class Decode:
 		return (vae.decode_tiled(latent["samples"]) if tile else vae.decode(latent["samples"]),)
 
 
-class Encode:
+class LatentEncoder:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -179,7 +218,7 @@ class Encode:
 		return ({"samples": vae.encode_tiled(image) if tile else vae.encode(image)},)
 
 
-class Merge:
+class TokenMerge:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -197,7 +236,7 @@ class Merge:
 		return (apply_patch(pipe, ratio = ratio),)
 
 
-class Repeat:
+class MultiRepeat:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -227,7 +266,7 @@ class Repeat:
 		return (image, latent,)
 
 
-class Noise:
+class MultiNoise:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -258,7 +297,7 @@ class Noise:
 		return (image, latent,)
 
 
-class Resize:
+class MultiResize:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -281,7 +320,7 @@ class Resize:
 		if scale != 1.0:
 			if image is not None:
 				image = image.permute(0, 3, 1, 2)
-				image = torch.nn.functional.interpolate(image, mode = mode, scale_factor = scale)
+				image = F.interpolate(image, mode = mode, scale_factor = scale)
 				image = image.permute(0, 2, 3, 1)
 
 				if crop:
@@ -289,7 +328,7 @@ class Resize:
 
 			if latent is not None:
 				latent = latent["samples"]
-				latent = torch.nn.functional.interpolate(latent, mode = mode, scale_factor = scale)
+				latent = F.interpolate(latent, mode = mode, scale_factor = scale)
 
 				if crop:
 					latent = latent.permute(0, 3, 2, 1)
