@@ -13,7 +13,7 @@ All required models are downloaded to the Hugging Face `.cache` directory.
 ## Custom Nodes
 A bunch of custom/modded nodes.
 Name | Description
---- | ---
+:--- | :---
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Filter`.
 Aesthetic&nbsp;Filter | Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image with 1-based index.
 Aesthetic&nbsp;Select | Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
@@ -24,8 +24,8 @@ Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
 ## DeepFloyd Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All the stages with text encoder unloading enabled currently require more than 8GB of VRAM.
-Name                           | Description
-------------                     | ---
+Name | Description
+:--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes.
 IF&nbsp;Encoder | Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns `64x64px` images which can be used with `IF Stage II` or other nodes.
