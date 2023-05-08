@@ -10,7 +10,7 @@ To update execute the following command in the same directory:
 ```
 git -C custom_nodes\Zuellni pull
 ```
-All models are downloaded to the `.cache` directory.
+All required models are downloaded to to the `.cache` directory automatically.
 ## Aesthetic Nodes
 Name | Description
 :--- | :---
@@ -18,7 +18,7 @@ Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Filter`.
 Aesthetic&nbsp;Filter | Returns `x` best images and a `list` of their indexes based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image with 1-based index.
 Aesthetic&nbsp;Select | Takes `latents` and a `list` of indexes from `Aesthetic Filter` and returns only the selected `latents`.
 ## IF Nodes
-A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffusers/api/pipelines/if). All stages with text encoder unloading enabled require more than 8GB of VRAM.
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Text encoder requires more than 8GB of VRAM. To download the models you will have to agree to the terms of use on the huggingface page.
 Name | Description
 :--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes.
