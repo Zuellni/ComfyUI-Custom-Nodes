@@ -27,6 +27,9 @@ NODE_CLASS_MAPPINGS = {
 	"Latent Decoder": Custom.Decode,
 	"Latent Encoder": Custom.Encode,
 
+	# Model
+	"Token Merge": Custom.Merge,
+
 	# Multi
 	"Multi Noise": Custom.Noise,
 	"Multi Repeat": Custom.Repeat,

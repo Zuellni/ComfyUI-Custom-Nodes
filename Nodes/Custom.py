@@ -3,6 +3,7 @@ from folder_paths import get_output_directory
 from nodes import VAEEncode
 
 from transformers import pipeline
+from tomesd import apply_patch
 from pathlib import Path
 from PIL import Image
 import numpy as np
@@ -14,16 +15,16 @@ class Load:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": (["aesthetic", "waifu"], {"default": "aesthetic"}),
+				"name": (["aesthetic", "waifu"], {"default": "aesthetic"}),
 			},
 		}
 
 	CATEGORY = "Zuellni/Aesthetic"
 	FUNCTION = "process"
-	RETURN_TYPES = ("MODEL",)
+	RETURN_TYPES = ("PIPE",)
 
-	def process(self, model):
-		return (pipeline("image-classification", f"cafeai/cafe_{model}", device = get_torch_device()),)
+	def process(self, name):
+		return (pipeline("image-classification", f"cafeai/cafe_{name}", device = get_torch_device()),)
 
 
 class Filter:
@@ -176,6 +177,24 @@ class Encode:
 			image = image.repeat(batch_size, 1, 1, 1)
 
 		return ({"samples": vae.encode_tiled(image) if tile else vae.encode(image)},)
+
+
+class Merge:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"pipe": ("PIPE",),
+				"ratio": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+			}
+		}
+
+	CATEGORY = "Zuellni/Model"
+	FUNCTION = "process"
+	RETURN_TYPES = ("PIPE",)
+
+	def process(self, pipe, ratio):
+		return (apply_patch(pipe, ratio = ratio),)
 
 
 class Repeat:

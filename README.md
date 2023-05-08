@@ -9,7 +9,7 @@ To update execute the following command in the same directory:
 ```
 git -C custom_nodes\Zuellni pull
 ```
-All required models are downloaded to the Hugging Face `.cache` directory.
+All models are downloaded to the `.cache` directory.
 ## Aesthetic Nodes
 Name | Description
 :--- | :---
@@ -24,7 +24,7 @@ IF&nbsp;Loader | Loads models for use with other `IF` nodes.
 IF&nbsp;Encoder | Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns `64x64px` images which can be used with `IF Stage II` or other nodes.
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images. Returns `256x256px` images which can be used with `IF Stage III` or other nodes such as upscalers or samplers. Images larger than `64x64px` will still result in `256x256px` output.
-IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images 4 times. Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` additionally allows for upscaling larger images than normally possible.
+IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` additionally allows for upscaling larger images than normally possible.
 ## Other Nodes
 Name | Description
 :--- | :---
@@ -34,3 +34,4 @@ Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
+Token&nbsp;Merge | Applies [tomesd](https://github.com/dbolya/tomesd) to diffusers pipelines for speedup.
