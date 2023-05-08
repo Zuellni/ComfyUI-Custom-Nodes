@@ -37,7 +37,7 @@ A poor man's implementation of [DeepFloyd IF](https://huggingface.co/docs/diffus
 #### IF Loader
 Loads models for use with other `IF` nodes.
 #### IF Encoder
-Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Higher `batch_size` results in more images. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
+Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Setting `unload` to `True` removes the model from memory after it's finished. Prompts can be reused without having to reload it.
 #### IF Stage I
 Takes the prompt embeds from `IF Encoder` and returns `64x64px` images which can be used with `IF Stage II` or other nodes.
 #### IF Stage II
