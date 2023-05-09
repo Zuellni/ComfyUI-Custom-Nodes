@@ -35,5 +35,5 @@ Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image an
 Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
-Load&nbsp;Folder | Loads all images in a specified directory. The images will be padded if their dimensions aren't equal.
+Load&nbsp;Folder | Loads all images in a specified directory. The images will be resized, cropped and padded if their dimensions aren't the same.
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
