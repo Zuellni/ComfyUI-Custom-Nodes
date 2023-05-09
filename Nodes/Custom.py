@@ -2,7 +2,7 @@ from folder_paths import get_input_directory, get_output_directory
 from comfy.model_management import get_torch_device
 from nodes import VAEEncode
 
-import torchvision.transforms as T
+import torchvision.transforms.functional as TF
 import torch.nn.functional as F
 import torch
 
@@ -125,21 +125,20 @@ class LoadFolder:
 		input_dir = Path(input_dir)
 		images = []
 
-		if input_dir.is_dir():
-			for image in list(input_dir.glob(f"*.{file_type}")):
-				image = Image.open(image)
-				image = T.ToTensor()(image)
-				images.append(image)
+		for image in list(input_dir.glob(f"*.{file_type}")):
+			image = Image.open(image)
+			image = TF.to_tensor(image)
+			images.append(image)
 
-			if images:
-				if len(images) > 1:
-					max_h = max([image.shape[1] for image in images])
-					max_w = max([image.shape[2] for image in images])
-					images = [F.pad(image, [0, max_w - image.shape[2], 0, max_h - image.shape[1]]) for image in images]
+		if len(images) > 1:
+			min_height = min([image.shape[1] for image in images])
+			min_width = min([image.shape[2] for image in images])
+			min_dim = min(min_height, min_width)
+			images = [TF.resize(image, min_dim) for image in images]
+			images = [TF.center_crop(image, (min_height, min_width)) for image in images]
 
-				images = torch.stack(images)
-				images = images.permute(0, 2, 3, 1)
-
+		images = torch.stack(images)
+		images = images.permute(0, 2, 3, 1)
 		return (images,)
 
 
