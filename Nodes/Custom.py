@@ -7,7 +7,6 @@ import torch.nn.functional as F
 import torch
 
 from transformers import pipeline
-from tomesd import apply_patch
 from pathlib import Path
 from PIL import Image
 import numpy as np
@@ -123,16 +122,16 @@ class LoadFolder:
 
 	def process(self, input_dir, file_type):
 		input_dir = Path(input_dir)
-		images = []
+		images = list(input_dir.glob(f"*.{file_type}"))
 
-		for image in list(input_dir.glob(f"*.{file_type}")):
-			image = Image.open(image)
-			image = TF.to_tensor(image)
-			images.append(image)
+		if not images:
+			return (None,)
+
+		images = [TF.to_tensor(Image.open(image)) for image in images]
 
 		if len(images) > 1:
-			min_height = min([image.shape[1] for image in images])
-			min_width = min([image.shape[2] for image in images])
+			min_height, min_width = zip(*[(image.shape[1], image.shape[2]) for image in images])
+			min_height, min_width = min(min_height), min(min_width)
 			min_dim = min(min_height, min_width)
 			images = [TF.resize(image, min_dim) for image in images]
 			images = [TF.center_crop(image, (min_height, min_width)) for image in images]
@@ -215,24 +214,6 @@ class LatentEncoder:
 			image = image.repeat(batch_size, 1, 1, 1)
 
 		return ({"samples": vae.encode_tiled(image) if tile else vae.encode(image)},)
-
-
-class TokenMerge:
-	@classmethod
-	def INPUT_TYPES(s):
-		return {
-			"required": {
-				"pipe": ("PIPE",),
-				"ratio": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
-			}
-		}
-
-	CATEGORY = "Zuellni/Model"
-	FUNCTION = "process"
-	RETURN_TYPES = ("PIPE",)
-
-	def process(self, pipe, ratio):
-		return (apply_patch(pipe, ratio = ratio),)
 
 
 class MultiRepeat:

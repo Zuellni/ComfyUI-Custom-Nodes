@@ -37,4 +37,3 @@ Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `L
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 Load&nbsp;Folder | Loads all images in a specified directory. The images will be padded if their dimensions aren't equal.
 Share&nbsp;Image | Saves images without metadata in specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
-Token&nbsp;Merge | Applies [tomesd](https://github.com/dbolya/tomesd) to diffusers pipelines for speedup.

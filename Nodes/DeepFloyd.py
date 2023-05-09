@@ -200,7 +200,7 @@ class StageIII:
 				"pipe": ("PIPE",),
 				"image": ("IMAGE",),
 				"tile": ([False, True], {"default": False}),
-				"tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
+				"noise": ("INT", {"default": 100, "min": 0, "max": 100}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -213,7 +213,7 @@ class StageIII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, pipe, image, tile, tile_size, seed, steps, cfg, positive, negative):
+	def process(self, pipe, image, tile, noise, seed, steps, cfg, positive, negative):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
@@ -227,13 +227,13 @@ class StageIII:
 			progress.update_absolute(step)
 
 		if tile:
-			pipe.vae.config.sample_size = tile_size
 			pipe.vae.enable_tiling()
 
 		image = pipe(
 			image = image,
 			prompt = positive,
 			negative_prompt = negative,
+			noise_level = noise,
 			generator = torch.manual_seed(seed),
 			guidance_scale = cfg,
 			num_inference_steps = steps,
