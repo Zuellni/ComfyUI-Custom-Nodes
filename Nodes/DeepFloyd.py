@@ -19,13 +19,13 @@ class Loader:
 
 	CATEGORY = "Zuellni/DeepFloyd"
 	FUNCTION = "process"
-	RETURN_TYPES = ("PIPE",)
+	RETURN_TYPES = ("IF_MODEL",)
 
 	def process(self, model, stage):
-		pipe = None
+		if_model = None
 
 		if stage == "III":
-			pipe = DiffusionPipeline.from_pretrained(
+			if_model = DiffusionPipeline.from_pretrained(
 				"stabilityai/stable-diffusion-x4-upscaler",
 				torch_dtype = torch.float16,
 				requires_safety_checker = False,
@@ -34,7 +34,7 @@ class Loader:
 				watermarker = None,
 			)
 		else:
-			pipe = DiffusionPipeline.from_pretrained(
+			if_model = DiffusionPipeline.from_pretrained(
 				f"DeepFloyd/IF-{stage}-{model}-v1.0",
 				variant = "fp16",
 				torch_dtype = torch.float16,
@@ -45,13 +45,13 @@ class Loader:
 				watermarker = None,
 			)
 
-		pipe.unet.to(torch.float16, memory_format = torch.channels_last)
-		pipe.enable_model_cpu_offload()
+		if_model.unet.to(torch.float16, memory_format = torch.channels_last)
+		if_model.enable_model_cpu_offload()
 
 		if xformers_enabled():
-			pipe.enable_xformers_memory_efficient_attention()
+			if_model.enable_xformers_memory_efficient_attention()
 
-		return (pipe,)
+		return (if_model,)
 
 
 class Encoder:
@@ -59,7 +59,8 @@ class Encoder:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"unload": ([False, True], {"default": False}),
+				"load_in_8bit": ([False, True], {"default": True}),
+				"unload": ([False, True], {"default": True}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -69,17 +70,17 @@ class Encoder:
 	FUNCTION = "process"
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, unload, positive, negative):
+	def process(self, load_in_8bit, unload, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
 			f"DeepFloyd/IF-I-M-v1.0",
 			subfolder = "text_encoder",
 			variant = "fp16",
 			torch_dtype = torch.float16,
-			load_in_8bit = True,
+			load_in_8bit = load_in_8bit,
 			device_map = "auto",
 		)
 
-		pipe = DiffusionPipeline.from_pretrained(
+		if_model = DiffusionPipeline.from_pretrained(
 			f"DeepFloyd/IF-I-M-v1.0",
 			text_encoder = text_encoder,
 			requires_safety_checker = False,
@@ -90,15 +91,15 @@ class Encoder:
 		)
 
 		if xformers_enabled():
-			pipe.enable_xformers_memory_efficient_attention()
+			if_model.enable_xformers_memory_efficient_attention()
 
-		positive, negative = pipe.encode_prompt(
+		positive, negative = if_model.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
 		)
 
 		if unload:
-			del pipe, text_encoder
+			del if_model, text_encoder
 			gc.collect()
 
 		return (positive, negative,)
@@ -109,7 +110,7 @@ class StageI:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"pipe": ("PIPE",),
+				"if_model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
@@ -123,14 +124,14 @@ class StageI:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, pipe, positive, negative, batch_size, seed, steps, cfg):
+	def process(self, if_model, positive, negative, batch_size, seed, steps, cfg):
 		progress = ProgressBar(steps)
 
 		def callback(step, time_step, latents):
 			throw_exception_if_processing_interrupted()
 			progress.update_absolute(step)
 
-		image = pipe(
+		image = if_model(
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
 			generator = torch.manual_seed(seed),
@@ -151,7 +152,7 @@ class StageII:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"pipe": ("PIPE",),
+				"if_model": ("IF_MODEL",),
 				"image": ("IMAGE",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
@@ -165,7 +166,7 @@ class StageII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, pipe, image, positive, negative, seed, steps, cfg):
+	def process(self, if_model, image, positive, negative, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
@@ -178,7 +179,7 @@ class StageII:
 			throw_exception_if_processing_interrupted()
 			progress.update_absolute(step)
 
-		image = pipe(
+		image = if_model(
 			image = image,
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
@@ -197,9 +198,10 @@ class StageIII:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"pipe": ("PIPE",),
+				"if_model": ("IF_MODEL",),
 				"image": ("IMAGE",),
 				"tile": ([False, True], {"default": False}),
+				"tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
 				"noise": ("INT", {"default": 100, "min": 0, "max": 100}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -213,7 +215,7 @@ class StageIII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, pipe, image, tile, noise, seed, steps, cfg, positive, negative):
+	def process(self, if_model, image, tile, tile_size, noise, seed, steps, cfg, positive, negative):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
@@ -227,9 +229,10 @@ class StageIII:
 			progress.update_absolute(step)
 
 		if tile:
-			pipe.vae.enable_tiling()
+			if_model.vae.config.sample_size = tile_size
+			if_model.vae.enable_tiling()
 
-		image = pipe(
+		image = if_model(
 			image = image,
 			prompt = positive,
 			negative_prompt = negative,
