@@ -42,7 +42,7 @@ class AestheticFilter:
 			"required": {
 				"model": ("AE_MODEL",),
 				"images": ("IMAGE",),
-				"count": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"count": ("INT", {"default": 1, "min": 0, "max": 64}),
 			},
 		}
 
@@ -51,6 +51,9 @@ class AestheticFilter:
 	RETURN_TYPES = ("IMAGE", "LIST",)
 
 	def process(self, model, images, count):
+		if count == 0:
+			return (None,)
+
 		aesthetic = model["aesthetic"]
 		waifu = model["waifu"]
 
@@ -139,6 +142,9 @@ class LoadFolder:
 			min_height = min(min_height, image.shape[1]) if min_height else image.shape[1]
 			min_width = min(min_width, image.shape[2]) if min_width else image.shape[2]
 			images.append(image)
+
+		if not images:
+			return (None,)
 
 		if len(images) > 1:
 			min_dim = min(min_height, min_width)
