@@ -25,8 +25,8 @@ NODE_CLASS_MAPPINGS = {
 	"Share Image": Custom.ShareImage,
 
 	# Latent
-	"Latent Decoder": Custom.LatentDecoder,
-	"Latent Encoder": Custom.LatentEncoder,
+	"Latent Decode": Custom.LatentDecode,
+	"Latent Encode": Custom.LatentEncode,
 
 	# Multi
 	"Multi Crop": Custom.MultiCrop,

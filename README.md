@@ -23,18 +23,18 @@ A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd).
 Name | Description
 :--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes.
-IF&nbsp;Encoder | Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Setting `unload` to `True` removes the model from memory. Prompts can be reused without having to reload it.
+IF&nbsp;Encoder | Encodes prompts for use with `IF Stage I` and `IF Stage II`. Setting `unload` to `True` removes the model from memory. Prompts can be reused without having to reload it.
 IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns images which can be used with `IF Stage II` or other nodes.
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
 ## Other Nodes
 Name | Description
 :--- | :---
-Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
-Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
+Latent&nbsp;Decode | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
+Latent&nbsp;Encode | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
 Multi&nbsp;Crop | Center crops images/latents to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to images/latents.
-Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
+Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encode`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
 Load&nbsp;Folder | Loads all images in a specified directory. The images will be cropped/resized if their dimensions aren't equal.
 Share&nbsp;Image | Saves images without metadata in a specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.

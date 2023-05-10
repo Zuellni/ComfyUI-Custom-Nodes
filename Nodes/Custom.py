@@ -186,7 +186,7 @@ class ShareImage:
 		return (None,)
 
 
-class LatentDecoder:
+class LatentDecode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
@@ -205,7 +205,7 @@ class LatentDecoder:
 		return (vae.decode_tiled(latent["samples"]) if tile else vae.decode(latent["samples"]),)
 
 
-class LatentEncoder:
+class LatentEncode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
