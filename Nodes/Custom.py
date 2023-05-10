@@ -1,6 +1,5 @@
 from folder_paths import get_input_directory, get_output_directory
 from comfy.model_management import get_torch_device
-from nodes import VAEEncode
 
 import torchvision.transforms.functional as TF
 import torch.nn.functional as F
@@ -9,7 +8,6 @@ import torch
 from transformers import pipeline
 from pathlib import Path
 from PIL import Image
-import numpy as np
 
 
 class AestheticLoader:
@@ -17,16 +15,23 @@ class AestheticLoader:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": (["aesthetic", "waifu"], {"default": "aesthetic"}),
+				"aesthetic": ([False, True], {"default": True}),
+				"waifu": ([False, True], {"default": True}),
 			},
 		}
 
 	CATEGORY = "Zuellni/Aesthetic"
 	FUNCTION = "process"
-	RETURN_TYPES = ("PIPE",)
+	RETURN_TYPES = ("AE_MODEL",)
 
-	def process(self, model):
-		return (pipeline("image-classification", f"cafeai/cafe_{model}", device = get_torch_device()),)
+	def process(self, aesthetic, waifu):
+		if aesthetic:
+			aesthetic = pipeline("image-classification", f"cafeai/cafe_aesthetic", device = get_torch_device())
+
+		if waifu:
+			waifu = pipeline("image-classification", f"cafeai/cafe_waifu", device = get_torch_device())
+
+		return ({"aesthetic": aesthetic, "waifu": waifu},)
 
 
 class AestheticFilter:
@@ -34,12 +39,9 @@ class AestheticFilter:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
+				"ae_model": ("AE_MODEL",),
 				"images": ("IMAGE",),
 				"count": ("INT", {"default": 1, "min": 1, "max": 64}),
-			},
-			"optional": {
-				"aesthetic": ("PIPE",),
-				"waifu": ("PIPE",),
 			},
 		}
 
@@ -47,15 +49,18 @@ class AestheticFilter:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE", "LIST",)
 
-	def process(self, images, count, aesthetic = None, waifu = None):
+	def process(self, ae_model, images, count):
+		aesthetic = ae_model["aesthetic"]
+		waifu = ae_model["waifu"]
+
 		if not aesthetic and not waifu:
 			return (images[count - 1].unsqueeze(0), [count - 1],)
 
 		scores = {}
 
 		for index, image in enumerate(images):
-			image = 255.0 * image.cpu().numpy()
-			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
+			image = image.permute(2, 0, 1)
+			image = TF.to_pil_image(image)
 			score = 0.0
 
 			if aesthetic:
@@ -122,16 +127,19 @@ class LoadFolder:
 
 	def process(self, input_dir, file_type):
 		input_dir = Path(input_dir)
-		images = list(input_dir.glob(f"*.{file_type}"))
+		min_height = None
+		min_width = None
+		images = []
 
-		if not images:
-			return (None,)
-
-		images = [TF.to_tensor(Image.open(image)) for image in images]
+		for image in list(input_dir.glob(f"*.{file_type}")):
+			image = Image.open(image)
+			image = TF.to_tensor(image)
+			image = image[:3, :, :]
+			min_height = min(min_height, image.shape[1]) if min_height else image.shape[1]
+			min_width = min(min_width, image.shape[2]) if min_width else image.shape[2]
+			images.append(image)
 
 		if len(images) > 1:
-			min_height, min_width = zip(*[(image.shape[1], image.shape[2]) for image in images])
-			min_height, min_width = min(min_height), min(min_width)
 			min_dim = min(min_height, min_width)
 			images = [TF.resize(image, min_dim) for image in images]
 			images = [TF.center_crop(image, (min_height, min_width)) for image in images]
@@ -163,10 +171,10 @@ class ShareImage:
 		output_dir.mkdir(parents = True, exist_ok = True)
 
 		for image in images:
-			image = 255.0 * image.cpu().numpy()
-			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-			image.save(output_dir / f"{prefix}_{Save.COUNTER:05}.png", optimize = True)
-			Save.COUNTER += 1
+			image = image.permute(2, 0, 1)
+			image = TF.to_pil_image(image)
+			image.save(output_dir / f"{prefix}_{ShareImage.COUNTER:05}.png", optimize = True)
+			ShareImage.COUNTER += 1
 
 		return (None,)
 
@@ -208,7 +216,6 @@ class LatentEncoder:
 
 	def process(self, image, vae, tile, batch_size):
 		image = image[:, :, :, :3]
-		image = VAEEncode.vae_encode_crop_pixels(image)
 
 		if batch_size > 1:
 			image = image.repeat(batch_size, 1, 1, 1)
@@ -284,7 +291,6 @@ class MultiResize:
 			"required": {
 				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.05}),
 				"mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
-				"crop": ([False, True], {"default": False}),
 			},
 			"optional": {
 				"image": ("IMAGE",),
@@ -296,25 +302,16 @@ class MultiResize:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE", "LATENT",)
 
-	def process(self, scale, mode, crop, image = None, latent = None):
+	def process(self, scale, mode, image = None, latent = None):
 		if scale != 1.0:
 			if image is not None:
 				image = image.permute(0, 3, 1, 2)
 				image = F.interpolate(image, mode = mode, scale_factor = scale)
 				image = image.permute(0, 2, 3, 1)
 
-				if crop:
-					image = VAEEncode.vae_encode_crop_pixels(image)
-
 			if latent is not None:
 				latent = latent["samples"]
 				latent = F.interpolate(latent, mode = mode, scale_factor = scale)
-
-				if crop:
-					latent = latent.permute(0, 3, 2, 1)
-					latent = VAEEncode.vae_encode_crop_pixels(latent)
-					latent = latent.permute(0, 3, 2, 1)
-
 				latent = {"samples": latent}
 
 		return (image, latent,)
