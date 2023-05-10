@@ -230,6 +230,38 @@ class LatentEncoder:
 		return ({"samples": vae.encode_tiled(image) if tile else vae.encode(image)},)
 
 
+class MultiCrop:
+	@classmethod
+	def INPUT_TYPES(s):
+		return {
+			"required": {
+				"width": ("INT", {"default": 512, "min": 8, "max": 8192}),
+				"height": ("INT", {"default": 512, "min": 8, "max": 8192}), 
+			},
+			"optional": {
+				"image": ("IMAGE",),
+				"latent": ("LATENT",),
+			},
+		}
+
+	CATEGORY = "Zuellni/Multi"
+	FUNCTION = "process"
+	RETURN_TYPES = ("IMAGE", "LATENT",)
+
+	def process(self, width, height, image = None, latent = None):
+		if image is not None:
+			image = image.permute(0, 3, 1, 2)
+			image = TF.center_crop(image, (height, width))
+			image = image.permute(0, 2, 3, 1)
+
+		if latent is not None:
+			latent = latent["samples"]
+			latent = TF.center_crop(latent, (height // 8, width // 8))
+			latent = {"samples": latent}
+
+		return (image, latent,)
+
+
 class MultiRepeat:
 	@classmethod
 	def INPUT_TYPES(s):

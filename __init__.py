@@ -29,6 +29,7 @@ NODE_CLASS_MAPPINGS = {
 	"Latent Encoder": Custom.LatentEncoder,
 
 	# Multi
+	"Multi Crop": Custom.MultiCrop,
 	"Multi Noise": Custom.MultiNoise,
 	"Multi Repeat": Custom.MultiRepeat,
 	"Multi Resize": Custom.MultiResize,

@@ -32,6 +32,7 @@ Name | Description
 :--- | :---
 Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `x` times without having to create multiple sampler nodes.
+Multi&nbsp:Crop | Center crops images/latents to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `x` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height. Works with both images and latents.
