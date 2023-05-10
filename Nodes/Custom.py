@@ -52,7 +52,7 @@ class AestheticFilter:
 
 	def process(self, model, images, count):
 		if count == 0:
-			return (None,)
+			return (None, None,)
 
 		aesthetic = model["aesthetic"]
 		waifu = model["waifu"]
