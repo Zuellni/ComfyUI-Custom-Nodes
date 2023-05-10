@@ -8,6 +8,7 @@ import torch
 from transformers import pipeline
 from pathlib import Path
 from PIL import Image
+import numpy as np
 
 
 class AestheticLoader:
@@ -59,8 +60,8 @@ class AestheticFilter:
 		scores = {}
 
 		for index, image in enumerate(images):
-			image = image.permute(2, 0, 1)
-			image = TF.to_pil_image(image)
+			image = 255.0 * image.cpu().numpy()
+			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
 			score = 0.0
 
 			if aesthetic:
@@ -171,8 +172,8 @@ class ShareImage:
 		output_dir.mkdir(parents = True, exist_ok = True)
 
 		for image in images:
-			image = image.permute(2, 0, 1)
-			image = TF.to_pil_image(image)
+			image = 255.0 * image.cpu().numpy()
+			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
 			image.save(output_dir / f"{prefix}_{ShareImage.COUNTER:05}.png", optimize = True)
 			ShareImage.COUNTER += 1
 

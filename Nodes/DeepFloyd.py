@@ -1,6 +1,7 @@
 from comfy.model_management import throw_exception_if_processing_interrupted, xformers_enabled
 from comfy.utils import ProgressBar
 
+import torchvision.transforms.functional as TF
 from transformers import T5EncoderModel
 from diffusers import DiffusionPipeline
 import torch
@@ -99,6 +100,8 @@ class StageI:
 				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
+				"width": ("INT", {"default": 64, "min": 8, "max": 256, "step": 8}),
+				"height": ("INT", {"default": 64, "min": 8, "max": 256, "step": 8}),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -110,7 +113,7 @@ class StageI:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, model, positive, negative, batch_size, seed, steps, cfg):
+	def process(self, model, positive, negative, width, height, batch_size, seed, steps, cfg):
 		progress = ProgressBar(steps)
 
 		def callback(step, time_step, latent):
@@ -120,6 +123,8 @@ class StageI:
 		image = model(
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
+			width = width,
+			height = height,
 			generator = torch.manual_seed(seed),
 			guidance_scale = cfg,
 			num_images_per_prompt = batch_size,
@@ -156,6 +161,11 @@ class StageII:
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
+		height = image.shape[2]
+		width = image.shape[3]
+		max_dim = max(height, width)
+		image = TF.center_crop(image, max_dim)
+		model.unet.config.sample_size = max_dim * 4
 
 		if batch_size > 1:
 			positive = positive.repeat(batch_size, 1, 1)
@@ -174,8 +184,10 @@ class StageII:
 			num_inference_steps = steps,
 			callback = callback,
 			output_type = "pt",
-		).images.cpu().permute(0, 2, 3, 1).float()
+		).images.cpu().float()
 
+		image = TF.center_crop(image, (height * 4, width * 4))
+		image = image.permute(0, 2, 3, 1)
 		return (image,)
 
 
@@ -210,13 +222,13 @@ class StageIII:
 			positive = [positive] * batch_size
 			negative = [negative] * batch_size
 
-		def callback(step, time_step, latent):
-			throw_exception_if_processing_interrupted()
-			progress.update_absolute(step)
-
 		if tile:
 			model.vae.config.sample_size = tile_size
 			model.vae.enable_tiling()
+
+		def callback(step, time_step, latent):
+			throw_exception_if_processing_interrupted()
+			progress.update_absolute(step)
 
 		image = model(
 			image = image,
