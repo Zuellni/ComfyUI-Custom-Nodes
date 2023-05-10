@@ -1,5 +1,5 @@
 # Custom nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI).
-![workflow](https://github.com/Zuellni/ComfyUI-Custom-Nodes/assets/123005779/51a01216-2481-4af2-aa1e-ad83545bd6da)
+![workflow](https://github.com/Zuellni/ComfyUI-Custom-Nodes/assets/123005779/692802bb-3d66-4a09-8d90-74e745f8478c)
 The workflow above is embedded in the image. You can load it in ComfyUI.
 ## Installation
 Clone the repository to `custom_nodes` in your ComfyUI directory and install the requirements:
