@@ -173,8 +173,7 @@ class StageII:
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
-		height = image.shape[2]
-		width = image.shape[3]
+		height, width = image.shape[2:4]
 		max_dim = max(height, width)
 		image = TF.center_crop(image, max_dim)
 		model.unet.config.sample_size = max_dim * scale
