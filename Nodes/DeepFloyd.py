@@ -22,15 +22,26 @@ class Loader:
 	RETURN_TYPES = ("IF_MODEL",)
 
 	def process(self, model):
-		model = DiffusionPipeline.from_pretrained(
-			"stabilityai/stable-diffusion-x4-upscaler" if model == "III" else f"DeepFloyd/IF-{model}-v1.0",
-			variant = "fp16",
-			torch_dtype = torch.float16,
-			requires_safety_checker = False,
-			feature_extractor = None,
-			safety_checker = None,
-			watermarker = None,
-		)
+		if model == "III":
+			model = DiffusionPipeline.from_pretrained(
+				"stabilityai/stable-diffusion-x4-upscaler",
+				torch_dtype = torch.float16,
+				requires_safety_checker = False,
+				feature_extractor = None,
+				safety_checker = None,
+				watermarker = None,
+			)
+		else:
+			model = DiffusionPipeline.from_pretrained(
+				f"DeepFloyd/IF-{model}-v1.0",
+				variant = "fp16",
+				torch_dtype = torch.float16,
+				requires_safety_checker = False,
+				feature_extractor = None,
+				safety_checker = None,
+				text_encoder = None,
+				watermarker = None,
+			)
 
 		model.unet.to(torch.float16, memory_format = torch.channels_last)
 		model.enable_model_cpu_offload()
