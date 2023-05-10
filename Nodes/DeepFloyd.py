@@ -158,6 +158,7 @@ class StageII:
 				"image": ("IMAGE",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
+				"scale": ("INT", {"default": 4, "min": 1, "max": 8}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -168,7 +169,7 @@ class StageII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, model, image, positive, negative, seed, steps, cfg):
+	def process(self, model, image, positive, negative, scale, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
@@ -176,7 +177,7 @@ class StageII:
 		width = image.shape[3]
 		max_dim = max(height, width)
 		image = TF.center_crop(image, max_dim)
-		model.unet.config.sample_size = max_dim * 4
+		model.unet.config.sample_size = max_dim * scale
 
 		if batch_size > 1:
 			positive = positive.repeat(batch_size, 1, 1)
@@ -197,7 +198,7 @@ class StageII:
 			output_type = "pt",
 		).images.cpu().float()
 
-		image = TF.center_crop(image, (height * 4, width * 4))
+		image = TF.center_crop(image, (height * scale, width * scale))
 		image = image.permute(0, 2, 3, 1)
 		return (image,)
 

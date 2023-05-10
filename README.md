@@ -25,7 +25,7 @@ Name | Description
 IF&nbsp;Loader | Loads models for use with other `IF` nodes.
 IF&nbsp;Encoder | Encodes positive/negative prompts for use with `IF Stage I` and `IF Stage II`. Setting `unload` to `True` removes the model from memory. Prompts can be reused without having to reload it.
 IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns images which can be used with `IF Stage II` or other nodes.
-IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them 4 times.
+IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
 ## Other Nodes
 Name | Description
