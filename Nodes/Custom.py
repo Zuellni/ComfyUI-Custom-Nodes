@@ -39,7 +39,7 @@ class AestheticFilter:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"ae_model": ("AE_MODEL",),
+				"model": ("AE_MODEL",),
 				"images": ("IMAGE",),
 				"count": ("INT", {"default": 1, "min": 1, "max": 64}),
 			},
@@ -49,9 +49,9 @@ class AestheticFilter:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE", "LIST",)
 
-	def process(self, ae_model, images, count):
-		aesthetic = ae_model["aesthetic"]
-		waifu = ae_model["waifu"]
+	def process(self, model, images, count):
+		aesthetic = model["aesthetic"]
+		waifu = model["waifu"]
 
 		if not aesthetic and not waifu:
 			return (images[count - 1].unsqueeze(0), [count - 1],)

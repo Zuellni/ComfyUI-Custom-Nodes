@@ -12,8 +12,7 @@ class Loader:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": (["M", "L", "XL"], {"default": "M"}),
-				"stage": (["I", "II", "III"], {"default": "I"}),
+				"model": (["I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "I-M"}),
 			},
 		}
 
@@ -21,37 +20,24 @@ class Loader:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IF_MODEL",)
 
-	def process(self, model, stage):
-		if_model = None
+	def process(self, model):
+		model = DiffusionPipeline.from_pretrained(
+			"stabilityai/stable-diffusion-x4-upscaler" if model == "III" else f"DeepFloyd/IF-{model}-v1.0",
+			variant = "fp16",
+			torch_dtype = torch.float16,
+			requires_safety_checker = False,
+			feature_extractor = None,
+			safety_checker = None,
+			watermarker = None,
+		)
 
-		if stage == "III":
-			if_model = DiffusionPipeline.from_pretrained(
-				"stabilityai/stable-diffusion-x4-upscaler",
-				torch_dtype = torch.float16,
-				requires_safety_checker = False,
-				feature_extractor = None,
-				safety_checker = None,
-				watermarker = None,
-			)
-		else:
-			if_model = DiffusionPipeline.from_pretrained(
-				f"DeepFloyd/IF-{stage}-{model}-v1.0",
-				variant = "fp16",
-				torch_dtype = torch.float16,
-				requires_safety_checker = False,
-				feature_extractor = None,
-				safety_checker = None,
-				text_encoder = None,
-				watermarker = None,
-			)
-
-		if_model.unet.to(torch.float16, memory_format = torch.channels_last)
-		if_model.enable_model_cpu_offload()
+		model.unet.to(torch.float16, memory_format = torch.channels_last)
+		model.enable_model_cpu_offload()
 
 		if xformers_enabled():
-			if_model.enable_xformers_memory_efficient_attention()
+			model.enable_xformers_memory_efficient_attention()
 
-		return (if_model,)
+		return (model,)
 
 
 class Encoder:
@@ -80,7 +66,7 @@ class Encoder:
 			device_map = "auto",
 		)
 
-		if_model = DiffusionPipeline.from_pretrained(
+		model = DiffusionPipeline.from_pretrained(
 			f"DeepFloyd/IF-I-M-v1.0",
 			text_encoder = text_encoder,
 			requires_safety_checker = False,
@@ -91,15 +77,15 @@ class Encoder:
 		)
 
 		if xformers_enabled():
-			if_model.enable_xformers_memory_efficient_attention()
+			model.enable_xformers_memory_efficient_attention()
 
-		positive, negative = if_model.encode_prompt(
+		positive, negative = model.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
 		)
 
 		if unload:
-			del if_model, text_encoder
+			del model, text_encoder
 			gc.collect()
 
 		return (positive, negative,)
@@ -110,7 +96,7 @@ class StageI:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"if_model": ("IF_MODEL",),
+				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
@@ -124,14 +110,14 @@ class StageI:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, if_model, positive, negative, batch_size, seed, steps, cfg):
+	def process(self, model, positive, negative, batch_size, seed, steps, cfg):
 		progress = ProgressBar(steps)
 
-		def callback(step, time_step, latents):
+		def callback(step, time_step, latent):
 			throw_exception_if_processing_interrupted()
 			progress.update_absolute(step)
 
-		image = if_model(
+		image = model(
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
 			generator = torch.manual_seed(seed),
@@ -152,7 +138,7 @@ class StageII:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"if_model": ("IF_MODEL",),
+				"model": ("IF_MODEL",),
 				"image": ("IMAGE",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
@@ -166,7 +152,7 @@ class StageII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, if_model, image, positive, negative, seed, steps, cfg):
+	def process(self, model, image, positive, negative, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
@@ -175,11 +161,11 @@ class StageII:
 			positive = positive.repeat(batch_size, 1, 1)
 			negative = negative.repeat(batch_size, 1, 1)
 
-		def callback(step, time_step, latents):
+		def callback(step, time_step, latent):
 			throw_exception_if_processing_interrupted()
 			progress.update_absolute(step)
 
-		image = if_model(
+		image = model(
 			image = image,
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
@@ -198,7 +184,7 @@ class StageIII:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"if_model": ("IF_MODEL",),
+				"model": ("IF_MODEL",),
 				"image": ("IMAGE",),
 				"tile": ([False, True], {"default": False}),
 				"tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
@@ -215,7 +201,7 @@ class StageIII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, if_model, image, tile, tile_size, noise, seed, steps, cfg, positive, negative):
+	def process(self, model, image, tile, tile_size, noise, seed, steps, cfg, positive, negative):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
 		batch_size = image.shape[0]
@@ -224,15 +210,15 @@ class StageIII:
 			positive = [positive] * batch_size
 			negative = [negative] * batch_size
 
-		def callback(step, time_step, latents):
+		def callback(step, time_step, latent):
 			throw_exception_if_processing_interrupted()
 			progress.update_absolute(step)
 
 		if tile:
-			if_model.vae.config.sample_size = tile_size
-			if_model.vae.enable_tiling()
+			model.vae.config.sample_size = tile_size
+			model.vae.enable_tiling()
 
-		image = if_model(
+		image = model(
 			image = image,
 			prompt = positive,
 			negative_prompt = negative,

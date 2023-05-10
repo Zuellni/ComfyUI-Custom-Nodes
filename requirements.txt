@@ -1,4 +1,4 @@
 bitsandbytes; platform_system != "Windows"
-https://github.com/zuellni/bitsandbytes/archive/main.zip; platform_system == "Windows"
+git+https://github.com/zuellni/bitsandbytes; platform_system == "Windows"
 diffusers
 transformers
