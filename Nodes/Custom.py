@@ -42,7 +42,7 @@ class AestheticFilter:
 			"required": {
 				"model": ("AE_MODEL",),
 				"images": ("IMAGE",),
-				"count": ("INT", {"default": 1, "min": 0, "max": 64}),
+				"count": ("INT", {"default": 1, "min": 0, "max": 100}),
 			},
 		}
 
@@ -212,7 +212,7 @@ class LatentEncode:
 			"required": {
 				"image": ("IMAGE",),
 				"vae": ("VAE",),
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
 				"tile": ([False, True], {"default": False}),
 			},
 		}
@@ -267,7 +267,7 @@ class MultiRepeat:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
 			},
 			"optional": {
 				"image": ("IMAGE",),
@@ -328,7 +328,7 @@ class MultiResize:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"scale": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 8.0, "step": 0.05}),
+				"scale": ("FLOAT", {"default": 2.0, "min": 0.01, "max": 10.0, "step": 0.01}),
 				"mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
 			},
 			"optional": {

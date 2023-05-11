@@ -111,9 +111,9 @@ class StageI:
 				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
-				"width": ("INT", {"default": 64, "min": 8, "max": 256, "step": 8}),
-				"height": ("INT", {"default": 64, "min": 8, "max": 256, "step": 8}),
-				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
+				"width": ("INT", {"default": 64, "min": 8, "max": 1024, "step": 8}),
+				"height": ("INT", {"default": 64, "min": 8, "max": 1024, "step": 8}),
+				"batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -145,7 +145,7 @@ class StageI:
 		).images
 
 		image = (image / 2 + 0.5).clamp(0, 1)
-		image = image.cpu().permute(0, 2, 3, 1).float()
+		image = image.cpu().float().permute(0, 2, 3, 1)
 		return (image,)
 
 
@@ -158,7 +158,7 @@ class StageII:
 				"image": ("IMAGE",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
-				"scale": ("INT", {"default": 4, "min": 1, "max": 8}),
+				"scale": ("INT", {"default": 4, "min": 1, "max": 10}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -172,8 +172,7 @@ class StageII:
 	def process(self, model, image, positive, negative, scale, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
-		batch_size = image.shape[0]
-		height, width = image.shape[2:4]
+		batch_size, channels, height, width = image.shape
 		max_dim = max(height, width)
 		image = TF.center_crop(image, max_dim)
 		model.unet.config.sample_size = max_dim * scale
@@ -251,6 +250,6 @@ class StageIII:
 			num_inference_steps = steps,
 			callback = callback,
 			output_type = "pt",
-		).images.cpu().permute(0, 2, 3, 1).float()
+		).images.cpu().float().permute(0, 2, 3, 1)
 
 		return (image,)
