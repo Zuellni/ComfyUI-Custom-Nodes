@@ -45,10 +45,6 @@ class Loader:
 
 		model.unet.to(torch.float16, memory_format = torch.channels_last)
 		model.enable_model_cpu_offload()
-
-		if xformers_enabled():
-			model.enable_xformers_memory_efficient_attention()
-
 		return (model,)
 
 
@@ -87,9 +83,6 @@ class Encoder:
 			unet = None,
 			watermarker = None,
 		)
-
-		if xformers_enabled():
-			model.enable_xformers_memory_efficient_attention()
 
 		positive, negative = model.encode_prompt(
 			prompt = positive,
@@ -235,6 +228,9 @@ class StageIII:
 		if tile:
 			model.vae.config.sample_size = tile_size
 			model.vae.enable_tiling()
+
+		if xformers_enabled():
+			model.enable_xformers_memory_efficient_attention()
 
 		def callback(step, time_step, latent):
 			throw_exception_if_processing_interrupted()
