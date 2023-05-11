@@ -70,7 +70,7 @@ class Encoder:
 
 	def process(self, load_in_8bit, unload, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
-			f"DeepFloyd/IF-I-M-v1.0",
+			"DeepFloyd/IF-I-M-v1.0",
 			subfolder = "text_encoder",
 			variant = "fp16",
 			torch_dtype = torch.float16,
@@ -79,7 +79,7 @@ class Encoder:
 		)
 
 		model = DiffusionPipeline.from_pretrained(
-			f"DeepFloyd/IF-I-M-v1.0",
+			"DeepFloyd/IF-I-M-v1.0",
 			text_encoder = text_encoder,
 			requires_safety_checker = False,
 			feature_extractor = None,
