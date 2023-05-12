@@ -62,7 +62,6 @@ class Encoder:
 			"required": {
 				"load_in_8bit": ([False, True], {"default": True}),
 				"unload": ([False, True], {"default": True}),
-				"device": ("STRING", {"default": "auto"}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -72,7 +71,7 @@ class Encoder:
 	FUNCTION = "process"
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, device, load_in_8bit, unload, positive, negative):
+	def process(self, load_in_8bit, unload, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
 			"DeepFloyd/IF-I-M-v1.0",
 			subfolder = "text_encoder",
@@ -91,11 +90,6 @@ class Encoder:
 			unet = None,
 			watermarker = None,
 		)
-
-		if device == "auto":
-			model.enable_model_cpu_offload()
-		else:
-			model.to(device)
 
 		positive, negative = model.encode_prompt(
 			prompt = positive,
