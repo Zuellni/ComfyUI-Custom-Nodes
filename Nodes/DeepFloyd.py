@@ -14,7 +14,7 @@ class Loader:
 		return {
 			"required": {
 				"model": (["I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "I-M"}),
-				"device": ("STRING", {"default": "auto"}),
+				"device": ("STRING", {"default": ""}),
 			},
 		}
 
@@ -47,21 +47,20 @@ class Loader:
 				watermarker = None,
 			)
 
-		if device == "auto":
-			model.enable_model_cpu_offload()
-		else:
-			model.to(device)
+		if device:
+			return (model.to(device),)
 
+		model.enable_model_cpu_offload()
 		return (model,)
 
 
-class Encoder:
+class Encode:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"load_in_8bit": ([False, True], {"default": True}),
 				"unload": ([False, True], {"default": True}),
+				"device": ("STRING", {"default": ""}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -69,36 +68,44 @@ class Encoder:
 
 	CATEGORY = "Zuellni/DeepFloyd"
 	FUNCTION = "process"
+	MODEL = None
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
+	TEXT_ENCODER = None
 
-	def process(self, load_in_8bit, unload, positive, negative):
-		text_encoder = T5EncoderModel.from_pretrained(
-			"DeepFloyd/IF-I-M-v1.0",
-			subfolder = "text_encoder",
-			variant = "fp16",
-			torch_dtype = torch.float16,
-			load_in_8bit = load_in_8bit,
-			device_map = "auto",
-		)
+	def process(self, unload, device, positive, negative):
+		if not Encode.MODEL:
+			Encode.TEXT_ENCODER = T5EncoderModel.from_pretrained(
+				"DeepFloyd/IF-I-M-v1.0",
+				subfolder = "text_encoder",
+				variant = "fp16",
+				torch_dtype = torch.float16,
+				load_in_8bit = False if device else True,
+				device_map = None if device else "auto",
+			)
 
-		model = DiffusionPipeline.from_pretrained(
-			"DeepFloyd/IF-I-M-v1.0",
-			text_encoder = text_encoder,
-			requires_safety_checker = False,
-			feature_extractor = None,
-			safety_checker = None,
-			unet = None,
-			watermarker = None,
-		)
+			Encode.MODEL = DiffusionPipeline.from_pretrained(
+				"DeepFloyd/IF-I-M-v1.0",
+				text_encoder = Encode.TEXT_ENCODER,
+				requires_safety_checker = False,
+				feature_extractor = None,
+				safety_checker = None,
+				unet = None,
+				watermarker = None,
+			)
 
-		positive, negative = model.encode_prompt(
+		if device:
+			Encode.MODEL.to(device)
+
+		positive, negative = Encode.MODEL.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
 		)
 
 		if unload:
-			del model, text_encoder
+			del Encode.MODEL, Encode.TEXT_ENCODER
 			gc.collect()
+			Encode.MODEL = None
+			Encode.TEXT_ENCODER = None
 
 		return (positive, negative,)
 
@@ -111,8 +118,8 @@ class StageI:
 				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
-				"width": ("INT", {"default": 64, "min": 8, "max": 1024, "step": 8}),
-				"height": ("INT", {"default": 64, "min": 8, "max": 1024, "step": 8}),
+				"width": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
+				"height": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -212,7 +219,7 @@ class StageIII:
 				"image": ("IMAGE",),
 				"tile": ([False, True], {"default": False}),
 				"tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
-				"noise": ("INT", {"default": 100, "min": 0, "max": 100}),
+				"noise": ("INT", {"default": 20, "min": 0, "max": 100}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
