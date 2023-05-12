@@ -14,6 +14,7 @@ class Loader:
 		return {
 			"required": {
 				"model": (["I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "I-M"}),
+				"device": ("STRING", {"default": "auto"}),
 			},
 		}
 
@@ -21,7 +22,7 @@ class Loader:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IF_MODEL",)
 
-	def process(self, model):
+	def process(self, model, device):
 		if model == "III":
 			model = DiffusionPipeline.from_pretrained(
 				"stabilityai/stable-diffusion-x4-upscaler",
@@ -31,6 +32,9 @@ class Loader:
 				safety_checker = None,
 				watermarker = None,
 			)
+
+			if xformers_enabled():
+				model.enable_xformers_memory_efficient_attention()
 		else:
 			model = DiffusionPipeline.from_pretrained(
 				f"DeepFloyd/IF-{model}-v1.0",
@@ -43,8 +47,11 @@ class Loader:
 				watermarker = None,
 			)
 
-		model.unet.to(torch.float16, memory_format = torch.channels_last)
-		model.enable_model_cpu_offload()
+		if device == "auto":
+			model.enable_model_cpu_offload()
+		else:
+			model.to(device)
+
 		return (model,)
 
 
@@ -55,6 +62,7 @@ class Encoder:
 			"required": {
 				"load_in_8bit": ([False, True], {"default": True}),
 				"unload": ([False, True], {"default": True}),
+				"device": ("STRING", {"default": "auto"}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -64,7 +72,7 @@ class Encoder:
 	FUNCTION = "process"
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, load_in_8bit, unload, positive, negative):
+	def process(self, device, load_in_8bit, unload, positive, negative):
 		text_encoder = T5EncoderModel.from_pretrained(
 			"DeepFloyd/IF-I-M-v1.0",
 			subfolder = "text_encoder",
@@ -83,6 +91,11 @@ class Encoder:
 			unet = None,
 			watermarker = None,
 		)
+
+		if device == "auto":
+			model.enable_model_cpu_offload()
+		else:
+			model.to(device)
 
 		positive, negative = model.encode_prompt(
 			prompt = positive,
@@ -151,7 +164,6 @@ class StageII:
 				"image": ("IMAGE",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
-				"scale": ("INT", {"default": 4, "min": 1, "max": 10}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -162,13 +174,15 @@ class StageII:
 	FUNCTION = "process"
 	RETURN_TYPES = ("IMAGE",)
 
-	def process(self, model, image, positive, negative, scale, seed, steps, cfg):
+	def process(self, model, image, positive, negative, seed, steps, cfg):
 		image = image.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
+
+		# temp scale hack, pad the image to max dim
 		batch_size, channels, height, width = image.shape
 		max_dim = max(height, width)
 		image = TF.center_crop(image, max_dim)
-		model.unet.config.sample_size = max_dim * scale
+		model.unet.config.sample_size = max_dim * 4
 
 		if batch_size > 1:
 			positive = positive.repeat(batch_size, 1, 1)
@@ -189,7 +203,8 @@ class StageII:
 			output_type = "pt",
 		).images.cpu().float()
 
-		image = TF.center_crop(image, (height * scale, width * scale))
+		# crop the image back to init dims * 4
+		image = TF.center_crop(image, (height * 4, width * 4))
 		image = image.permute(0, 2, 3, 1)
 		return (image,)
 
@@ -228,9 +243,6 @@ class StageIII:
 		if tile:
 			model.vae.config.sample_size = tile_size
 			model.vae.enable_tiling()
-
-		if xformers_enabled():
-			model.enable_xformers_memory_efficient_attention()
 
 		def callback(step, time_step, latent):
 			throw_exception_if_processing_interrupted()
