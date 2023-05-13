@@ -15,29 +15,29 @@ filterwarnings("ignore", category = UserWarning, message = "TypedStorage is depr
 
 
 NODE_CLASS_MAPPINGS = {
-	# Aesthetic
-	"Aesthetic Loader": Custom.AestheticLoader,
-	"Aesthetic Filter": Custom.AestheticFilter,
-	"Aesthetic Select": Custom.AestheticSelect,
+    # Aesthetic
+    "Aesthetic Loader": Custom.AestheticLoader,
+    "Aesthetic Filter": Custom.AestheticFilter,
+    "Aesthetic Select": Custom.AestheticSelect,
 
-	# Image
-	"Load Folder": Custom.LoadFolder,
-	"Share Image": Custom.ShareImage,
+    # Image
+    "Load Folder": Custom.LoadFolder,
+    "Share Image": Custom.ShareImage,
 
-	# Latent
-	"Latent Decode": Custom.LatentDecode,
-	"Latent Encode": Custom.LatentEncode,
+    # Latent
+    "Latent Decode": Custom.LatentDecode,
+    "Latent Encode": Custom.LatentEncode,
 
-	# Multi
-	"Multi Crop": Custom.MultiCrop,
-	"Multi Noise": Custom.MultiNoise,
-	"Multi Repeat": Custom.MultiRepeat,
-	"Multi Resize": Custom.MultiResize,
+    # Multi
+    "Multi Crop": Custom.MultiCrop,
+    "Multi Noise": Custom.MultiNoise,
+    "Multi Repeat": Custom.MultiRepeat,
+    "Multi Resize": Custom.MultiResize,
 
-	# DeepFloyd
-	"IF Loader": DeepFloyd.Loader,
-	"IF Encoder": DeepFloyd.Encoder,
-	"IF Stage I": DeepFloyd.StageI,
-	"IF Stage II": DeepFloyd.StageII,
-	"IF Stage III": DeepFloyd.StageIII,
+    # DeepFloyd
+    "IF Loader": DeepFloyd.Loader,
+    "IF Encoder": DeepFloyd.Encoder,
+    "IF Stage I": DeepFloyd.StageI,
+    "IF Stage II": DeepFloyd.StageII,
+    "IF Stage III": DeepFloyd.StageIII,
 }
