@@ -27,10 +27,10 @@ class AestheticLoader:
 
     def process(self, aesthetic, waifu):
         if aesthetic:
-            aesthetic = pipeline("image-classification", f"cafeai/cafe_aesthetic", device = get_torch_device())
+            aesthetic = pipeline("image-classification", f"cafeai/cafe_aesthetic", device=get_torch_device())
 
         if waifu:
-            waifu = pipeline("image-classification", f"cafeai/cafe_waifu", device = get_torch_device())
+            waifu = pipeline("image-classification", f"cafeai/cafe_waifu", device=get_torch_device())
 
         return ({"aesthetic": aesthetic, "waifu": waifu},)
 
@@ -68,20 +68,20 @@ class AestheticFilter:
             score = 0.0
 
             if aesthetic:
-                data = aesthetic(image, top_k = 2)
+                data = aesthetic(image, top_k=2)
 
                 for item in data:
                     score += item["score"] * (1.0 if item["label"] == "aesthetic" else -1.0)
 
             if waifu:
-                data = waifu(image, top_k = 2)
+                data = waifu(image, top_k=2)
 
                 for item in data:
                     score += item["score"] * (1.0 if item["label"] == "waifu" else -1.0)
 
             scores[index] = score
 
-        scores = sorted(scores.items(), key = lambda x: x[1], reverse = True)
+        scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         images = [images[score[0]] for score in scores[:count]]
         images = torch.stack(images)
         list = [score[0] for score in scores[:count]]
@@ -175,7 +175,7 @@ class ShareImage:
 
     def process(self, images, output_dir, prefix):
         output_dir = Path(output_dir)
-        output_dir.mkdir(parents = True, exist_ok = True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         if prefix:
             prefix = f"{prefix}_"
@@ -239,7 +239,7 @@ class MultiCrop:
         return {
             "required": {
                 "width": ("INT", {"default": 512, "min": 8, "max": 8192}),
-                "height": ("INT", {"default": 512, "min": 8, "max": 8192}), 
+                "height": ("INT", {"default": 512, "min": 8, "max": 8192}),
             },
             "optional": {
                 "image": ("IMAGE",),
@@ -251,7 +251,7 @@ class MultiCrop:
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE", "LATENT",)
 
-    def process(self, width, height, image = None, latent = None):
+    def process(self, width, height, image=None, latent=None):
         if image is not None:
             image = image.permute(0, 3, 1, 2)
             image = TF.center_crop(image, (height, width))
@@ -282,7 +282,7 @@ class MultiRepeat:
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE", "LATENT",)
 
-    def process(self, batch_size, image = None, latent = None):
+    def process(self, batch_size, image=None, latent=None):
         if batch_size > 1:
             if image is not None:
                 image = image.repeat(batch_size, 1, 1, 1)
@@ -312,7 +312,7 @@ class MultiNoise:
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE", "LATENT",)
 
-    def process(self, strength, image = None, latent = None):
+    def process(self, strength, image=None, latent=None):
         if strength > 0.0:
             if image is not None:
                 noise = torch.randn(image.shape)
@@ -344,16 +344,16 @@ class MultiResize:
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE", "LATENT",)
 
-    def process(self, scale, mode, image = None, latent = None):
+    def process(self, scale, mode, image=None, latent=None):
         if scale != 1.0:
             if image is not None:
                 image = image.permute(0, 3, 1, 2)
-                image = F.interpolate(image, mode = mode, scale_factor = scale)
+                image = F.interpolate(image, mode=mode, scale_factor=scale)
                 image = image.permute(0, 2, 3, 1)
 
             if latent is not None:
                 latent = latent["samples"]
-                latent = F.interpolate(latent, mode = mode, scale_factor = scale)
+                latent = F.interpolate(latent, mode=mode, scale_factor=scale)
                 latent = {"samples": latent}
 
         return (image, latent,)

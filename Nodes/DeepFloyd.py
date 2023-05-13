@@ -26,11 +26,11 @@ class Loader:
         if model == "III":
             model = DiffusionPipeline.from_pretrained(
                 "stabilityai/stable-diffusion-x4-upscaler",
-                torch_dtype = torch.float16,
-                requires_safety_checker = False,
-                feature_extractor = None,
-                safety_checker = None,
-                watermarker = None,
+                torch_dtype=torch.float16,
+                requires_safety_checker=False,
+                feature_extractor=None,
+                safety_checker=None,
+                watermarker=None,
             )
 
             if xformers_enabled():
@@ -38,13 +38,13 @@ class Loader:
         else:
             model = DiffusionPipeline.from_pretrained(
                 f"DeepFloyd/IF-{model}-v1.0",
-                variant = "fp16",
-                torch_dtype = torch.float16,
-                requires_safety_checker = False,
-                feature_extractor = None,
-                safety_checker = None,
-                text_encoder = None,
-                watermarker = None,
+                variant="fp16",
+                torch_dtype=torch.float16,
+                requires_safety_checker=False,
+                feature_extractor=None,
+                safety_checker=None,
+                text_encoder=None,
+                watermarker=None,
             )
 
         if device:
@@ -75,25 +75,25 @@ class Encoder:
         if not Encoder.MODEL:
             Encoder.TEXT_ENCODER = T5EncoderModel.from_pretrained(
                 "DeepFloyd/IF-I-M-v1.0",
-                subfolder = "text_encoder",
-                variant = "8bit",
-                load_in_8bit = True,
-                device_map = "auto",
+                subfolder="text_encoder",
+                variant="8bit",
+                load_in_8bit=True,
+                device_map="auto",
             )
 
             Encoder.MODEL = DiffusionPipeline.from_pretrained(
                 "DeepFloyd/IF-I-M-v1.0",
-                text_encoder = Encoder.TEXT_ENCODER,
-                requires_safety_checker = False,
-                feature_extractor = None,
-                safety_checker = None,
-                unet = None,
-                watermarker = None,
+                text_encoder=Encoder.TEXT_ENCODER,
+                requires_safety_checker=False,
+                feature_extractor=None,
+                safety_checker=None,
+                unet=None,
+                watermarker=None,
             )
 
         positive, negative = Encoder.MODEL.encode_prompt(
-            prompt = positive,
-            negative_prompt = negative,
+            prompt=positive,
+            negative_prompt=negative,
         )
 
         if unload:
@@ -134,16 +134,16 @@ class StageI:
             progress.update_absolute(step)
 
         image = model(
-            prompt_embeds = positive,
-            negative_prompt_embeds = negative,
-            width = width,
-            height = height,
-            generator = torch.manual_seed(seed),
-            guidance_scale = cfg,
-            num_images_per_prompt = batch_size,
-            num_inference_steps = steps,
-            callback = callback,
-            output_type = "pt",
+            prompt_embeds=positive,
+            negative_prompt_embeds=negative,
+            width=width,
+            height=height,
+            generator=torch.manual_seed(seed),
+            guidance_scale=cfg,
+            num_images_per_prompt=batch_size,
+            num_inference_steps=steps,
+            callback=callback,
+            output_type="pt",
         ).images
 
         image = (image / 2 + 0.5).clamp(0, 1)
@@ -189,14 +189,14 @@ class StageII:
             progress.update_absolute(step)
 
         image = model(
-            image = image,
-            prompt_embeds = positive,
-            negative_prompt_embeds = negative,
-            generator = torch.manual_seed(seed),
-            guidance_scale = cfg,
-            num_inference_steps = steps,
-            callback = callback,
-            output_type = "pt",
+            image=image,
+            prompt_embeds=positive,
+            negative_prompt_embeds=negative,
+            generator=torch.manual_seed(seed),
+            guidance_scale=cfg,
+            num_inference_steps=steps,
+            callback=callback,
+            output_type="pt",
         ).images.cpu().float()
 
         # crop the image back to init dims * 4
@@ -245,15 +245,15 @@ class StageIII:
             progress.update_absolute(step)
 
         image = model(
-            image = image,
-            prompt = positive,
-            negative_prompt = negative,
-            noise_level = noise,
-            generator = torch.manual_seed(seed),
-            guidance_scale = cfg,
-            num_inference_steps = steps,
-            callback = callback,
-            output_type = "pt",
+            image=image,
+            prompt=positive,
+            negative_prompt=negative,
+            noise_level=noise,
+            generator=torch.manual_seed(seed),
+            guidance_scale=cfg,
+            num_inference_steps=steps,
+            callback=callback,
+            output_type="pt",
         ).images.cpu().float().permute(0, 2, 3, 1)
 
         return (image,)

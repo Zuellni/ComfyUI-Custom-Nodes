@@ -9,9 +9,9 @@ from .Nodes import Custom, DeepFloyd
 transformers_logging.set_verbosity_error()
 diffusers_logging.set_verbosity_error()
 logging.getLogger("xformers").addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
-filterwarnings("ignore", category = FutureWarning, message = "The `reduce_labels` parameter is deprecated")
-filterwarnings("ignore", category = UserWarning, message = "You seem to be using the pipelines sequentially on GPU")
-filterwarnings("ignore", category = UserWarning, message = "TypedStorage is deprecated")
+filterwarnings("ignore", category=FutureWarning, message="The `reduce_labels` parameter is deprecated")
+filterwarnings("ignore", category=UserWarning, message="You seem to be using the pipelines sequentially on GPU")
+filterwarnings("ignore", category=UserWarning, message="TypedStorage is deprecated")
 
 
 NODE_CLASS_MAPPINGS = {
