@@ -77,7 +77,7 @@ class Encode:
 			Encode.TEXT_ENCODER = T5EncoderModel.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
 				subfolder = "text_encoder",
-				variant = "fp16",
+				variant = "fp16" if device else "8bit",
 				torch_dtype = torch.float16,
 				load_in_8bit = False if device else True,
 				device_map = None if device else "auto",
