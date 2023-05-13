@@ -54,13 +54,12 @@ class Loader:
 		return (model,)
 
 
-class Encode:
+class Encoder:
 	@classmethod
 	def INPUT_TYPES(s):
 		return {
 			"required": {
 				"unload": ([False, True], {"default": True}),
-				"device": ("STRING", {"default": ""}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -72,20 +71,19 @@ class Encode:
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 	TEXT_ENCODER = None
 
-	def process(self, unload, device, positive, negative):
-		if not Encode.MODEL:
-			Encode.TEXT_ENCODER = T5EncoderModel.from_pretrained(
+	def process(self, unload, positive, negative):
+		if not Encoder.MODEL:
+			Encoder.TEXT_ENCODER = T5EncoderModel.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
 				subfolder = "text_encoder",
-				variant = "fp16" if device else "8bit",
-				torch_dtype = torch.float16,
-				load_in_8bit = False if device else True,
-				device_map = None if device else "auto",
+				variant = "8bit",
+				load_in_8bit = True,
+				device_map = "auto",
 			)
 
-			Encode.MODEL = DiffusionPipeline.from_pretrained(
+			Encoder.MODEL = DiffusionPipeline.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
-				text_encoder = Encode.TEXT_ENCODER,
+				text_encoder = Encoder.TEXT_ENCODER,
 				requires_safety_checker = False,
 				feature_extractor = None,
 				safety_checker = None,
@@ -93,19 +91,16 @@ class Encode:
 				watermarker = None,
 			)
 
-		if device:
-			Encode.MODEL.to(device)
-
-		positive, negative = Encode.MODEL.encode_prompt(
+		positive, negative = Encoder.MODEL.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
 		)
 
 		if unload:
-			del Encode.MODEL, Encode.TEXT_ENCODER
+			del Encoder.MODEL, Encoder.TEXT_ENCODER
 			gc.collect()
-			Encode.MODEL = None
-			Encode.TEXT_ENCODER = None
+			Encoder.MODEL = None
+			Encoder.TEXT_ENCODER = None
 
 		return (positive, negative,)
 
@@ -115,9 +110,9 @@ class StageI:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
+				"model": ("IF_MODEL",),
 				"width": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
 				"height": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
@@ -161,10 +156,10 @@ class StageII:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": ("IF_MODEL",),
-				"image": ("IMAGE",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
+				"model": ("IF_MODEL",),
+				"image": ("IMAGE",),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
 				"cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),

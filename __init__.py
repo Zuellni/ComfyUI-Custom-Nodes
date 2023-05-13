@@ -36,7 +36,7 @@ NODE_CLASS_MAPPINGS = {
 
 	# DeepFloyd
 	"IF Loader": DeepFloyd.Loader,
-	"IF Encode": DeepFloyd.Encode,
+	"IF Encoder": DeepFloyd.Encoder,
 	"IF Stage I": DeepFloyd.StageI,
 	"IF Stage II": DeepFloyd.StageII,
 	"IF Stage III": DeepFloyd.StageIII,
