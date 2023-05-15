@@ -11,7 +11,7 @@ config = {
 	"Settings": {
 		"Update": False,
 		"Quiet Update": False,
-		"Suppress Warnings": False,
+		"Suppress Warnings": True,
 	},
 	"Load Nodes": {
 		"Aesthetic": True,
