@@ -44,10 +44,10 @@ if config["Settings"]["Update"]:
 	quiet = "-q" if config["Settings"]["Quiet Update"] else ""
 	req_path = path.with_name("requirements.txt")
 	git_path = path.parent
-	
+
 	print("\n[\033[94mZuellni\033[0m]: Updating repository...")
 	subprocess.run(f"git -C {git_path} pull {quiet}")
-	
+
 	print("[\033[94mZuellni\033[0m]: Installing requirements...")
 	subprocess.run(f"pip install {quiet} --upgrade-strategy only-if-needed -r {req_path}")
 
