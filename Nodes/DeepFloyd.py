@@ -1,11 +1,82 @@
-from comfy.model_management import throw_exception_if_processing_interrupted, xformers_enabled
-from comfy.utils import ProgressBar
-
-import torchvision.transforms.functional as TF
-from transformers import T5EncoderModel
-from diffusers import DiffusionPipeline
-import torch
 import gc
+import json
+import os.path
+import typing
+
+import torch
+import torchvision.transforms.functional as TF
+from diffusers import DiffusionPipeline, IFPipeline, StableDiffusionUpscalePipeline, IFSuperResolutionPipeline
+from diffusers.utils import is_accelerate_available, is_accelerate_version
+from transformers import T5EncoderModel
+
+from comfy.model_management import throw_exception_if_processing_interrupted, xformers_enabled
+# todo: this relies on the setup-py cleanup fork
+from comfy.utils import ProgressBar, get_project_root
+
+# todo: find or download the models automatically by their config jsons instead of using well known names
+_model_base_path = os.path.join(get_project_root(), "models", "deepfloyd")
+
+
+# todo: error when not using exactly torch 2.0.0
+
+def _find_files(directory: str, filename: str) -> typing.List[str]:
+    return [os.path.join(root, file) for root, _, files in os.walk(directory) for file in files if file == filename]
+
+
+# todo: ticket diffusers to correctly deal with an omitted unet
+def _patched_enable_model_cpu_offload_ifpipeline(self: IFPipeline | IFSuperResolutionPipeline, gpu_id=0):
+    r"""
+    Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
+    to `enable_sequential_cpu_offload`, this method moves one whole model at a time to the GPU when its `forward`
+    method is called, and the model remains in GPU until the next model runs. Memory savings are lower than with
+    `enable_sequential_cpu_offload`, but performance is much better due to the iterative execution of the `unet`.
+    """
+    if is_accelerate_available() and is_accelerate_version(">=", "0.17.0.dev0"):
+        from accelerate import cpu_offload_with_hook
+    else:
+        raise ImportError("`enable_model_cpu_offload` requires `accelerate v0.17.0` or higher.")
+
+    device = torch.device(f"cuda:{gpu_id}")
+
+    if self.device.type != "cpu":
+        self.to("cpu", silence_dtype_warnings=True)
+        torch.cuda.empty_cache()  # otherwise we don't see the memory savings (but they probably exist)
+
+    hook = None
+
+    if self.text_encoder is not None:
+        _, hook = cpu_offload_with_hook(self.text_encoder, device, prev_module_hook=hook)
+
+        # Accelerate will move the next model to the device _before_ calling the offload hook of the
+        # previous model. This will cause both models to be present on the device at the same time.
+        # IF uses T5 for its text encoder which is really large. We can manually call the offload
+        # hook for the text encoder to ensure it's moved to the cpu before the unet is moved to
+        # the GPU.
+        self.text_encoder_offload_hook = hook
+
+    # todo: patch here
+    if self.unet is not None:
+        _, hook = cpu_offload_with_hook(self.unet, device, prev_module_hook=hook)
+
+        # if the safety checker isn't called, `unet_offload_hook` will have to be called to manually offload the unet
+        self.unet_offload_hook = hook
+
+    if self.safety_checker is not None:
+        _, hook = cpu_offload_with_hook(self.safety_checker, device, prev_module_hook=hook)
+
+    # We'll offload the last model manually.
+    self.final_offload_hook = hook
+
+
+def _cpu_offload(self: DiffusionPipeline, gpu_id=0):
+    # todo: use sequential for low vram, ordinary cpu offload for normal vram
+    if isinstance(self, IFPipeline) or isinstance(self, IFSuperResolutionPipeline):
+        _patched_enable_model_cpu_offload_ifpipeline(self, gpu_id)
+    # todo: include sequential usage
+    # elif isinstance(self, StableDiffusionUpscalePipeline):
+    #     self.enable_sequential_cpu_offload(gpu_id)
+    elif hasattr(self, 'enable_model_cpu_offload'):
+        self.enable_model_cpu_offload(gpu_id)
 
 
 class Loader:
@@ -13,45 +84,62 @@ class Loader:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "model": (["I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "I-M"}),
+                "model_name": (Loader._MODELS, {"default": "I-M"}),
+                "load_in_8bit": ([False, True], {"default": False}),
                 "device": ("STRING", {"default": ""}),
-            },
+            }
         }
 
     CATEGORY = "Zuellni/DeepFloyd"
     FUNCTION = "process"
     RETURN_TYPES = ("IF_MODEL",)
 
-    def process(self, model, device):
-        if model == "III":
-            model = DiffusionPipeline.from_pretrained(
-                "stabilityai/stable-diffusion-x4-upscaler",
-                torch_dtype=torch.float16,
-                requires_safety_checker=False,
-                feature_extractor=None,
-                safety_checker=None,
-                watermarker=None,
-            )
+    _MODELS = ["I-M", "I-L", "I-XL", "II-M", "II-L", "III", "t5"]
 
-            if xformers_enabled():
-                model.enable_xformers_memory_efficient_attention()
+    # todo: correctly use load_in_8bit
+    def process(self, model_name: str, load_in_8bit: bool, device: str):
+        assert model_name in Loader._MODELS
+
+        model_v: DiffusionPipeline
+        model_path: str
+        kwargs = {
+            "variant": "fp16",
+            "torch_dtype": torch.float16,
+            "requires_safety_checker": False,
+            "feature_extractor": None,
+            "safety_checker": None,
+            "watermarker": None,
+            "load_in_8bit": load_in_8bit,
+            # todo: fix diffusers when using device_map auto on multi-gpu setups, layers are not assigned to different devices correctly
+            "device_map": None if device else "auto"
+        }
+
+        if model_name == "t5":
+            # find any valid IF model
+            model_path = next(os.path.dirname(file) for file in _find_files(_model_base_path, "model_index.json") if
+                              any(x == T5EncoderModel.__name__ for x in
+                                  json.load(open(file, 'r'))["text_encoder"]))
+            # todo: this must use load_in_8bit correctly
+            # kwargs["text_encoder"] = text_encoder
+            kwargs["unet"] = None
+        elif model_name == "III":
+            model_path = f"{_model_base_path}/stable-diffusion-x4-upscaler"
+            del kwargs["variant"]
         else:
-            model = DiffusionPipeline.from_pretrained(
-                f"DeepFloyd/IF-{model}-v1.0",
-                variant="fp16",
-                torch_dtype=torch.float16,
-                requires_safety_checker=False,
-                feature_extractor=None,
-                safety_checker=None,
-                text_encoder=None,
-                watermarker=None,
-            )
+            model_path = f"{_model_base_path}/IF-{model_name}-v1.0"
+            kwargs["text_encoder"] = None
+
+        model_v = DiffusionPipeline.from_pretrained(
+            pretrained_model_name_or_path=model_path,
+            **kwargs
+        )
 
         if device:
-            return (model.to(device),)
+            model_v = model_v.to(device)
 
-        model.enable_model_cpu_offload()
-        return (model,)
+        _cpu_offload(model_v, gpu_id=model_v.device.index)
+
+        return (model_v,)
 
 
 class Encoder:
@@ -59,7 +147,7 @@ class Encoder:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "unload": ([False, True], {"default": True}),
+                "model": ("IF_MODEL",),
                 "positive": ("STRING", {"default": "", "multiline": True}),
                 "negative": ("STRING", {"default": "", "multiline": True}),
             },
@@ -71,36 +159,11 @@ class Encoder:
     RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
     TEXT_ENCODER = None
 
-    def process(self, unload, positive, negative):
-        if not Encoder.MODEL:
-            Encoder.TEXT_ENCODER = T5EncoderModel.from_pretrained(
-                "DeepFloyd/IF-I-M-v1.0",
-                subfolder="text_encoder",
-                variant="8bit",
-                load_in_8bit=True,
-                device_map="auto",
-            )
-
-            Encoder.MODEL = DiffusionPipeline.from_pretrained(
-                "DeepFloyd/IF-I-M-v1.0",
-                text_encoder=Encoder.TEXT_ENCODER,
-                requires_safety_checker=False,
-                feature_extractor=None,
-                safety_checker=None,
-                unet=None,
-                watermarker=None,
-            )
-
-        positive, negative = Encoder.MODEL.encode_prompt(
+    def process(self, model: IFPipeline, positive, negative):
+        positive, negative = model.encode_prompt(
             prompt=positive,
             negative_prompt=negative,
         )
-
-        if unload:
-            del Encoder.MODEL, Encoder.TEXT_ENCODER
-            gc.collect()
-            Encoder.MODEL = None
-            Encoder.TEXT_ENCODER = None
 
         return (positive, negative,)
 
@@ -118,7 +181,7 @@ class StageI:
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-                "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0})
             },
         }
 
@@ -126,13 +189,14 @@ class StageI:
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE",)
 
-    def process(self, model, positive, negative, width, height, batch_size, seed, steps, cfg):
+    def process(self, model: IFPipeline, positive, negative, width, height, batch_size, seed, steps, cfg):
         progress = ProgressBar(steps)
 
         def callback(step, time_step, latent):
             throw_exception_if_processing_interrupted()
             progress.update_absolute(step)
 
+        gc.collect()
         image = model(
             prompt_embeds=positive,
             negative_prompt_embeds=negative,
@@ -159,7 +223,7 @@ class StageII:
                 "positive": ("POSITIVE",),
                 "negative": ("NEGATIVE",),
                 "model": ("IF_MODEL",),
-                "image": ("IMAGE",),
+                "images": ("IMAGE",),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
@@ -168,16 +232,15 @@ class StageII:
 
     CATEGORY = "Zuellni/DeepFloyd"
     FUNCTION = "process"
+    RETURN_NAMES = ("IMAGES",)
     RETURN_TYPES = ("IMAGE",)
 
-    def process(self, model, image, positive, negative, seed, steps, cfg):
-        image = image.permute(0, 3, 1, 2)
+    def process(self, model, images, positive, negative, seed, steps, cfg):
+        images = images.permute(0, 3, 1, 2)
         progress = ProgressBar(steps)
-
-        # temp scale hack, pad the image to max dim
-        batch_size, channels, height, width = image.shape
+        batch_size, channels, height, width = images.shape
         max_dim = max(height, width)
-        image = TF.center_crop(image, max_dim)
+        images = TF.center_crop(images, max_dim)
         model.unet.config.sample_size = max_dim * 4
 
         if batch_size > 1:
@@ -188,8 +251,8 @@ class StageII:
             throw_exception_if_processing_interrupted()
             progress.update_absolute(step)
 
-        image = model(
-            image=image,
+        images = model(
+            image=images,
             prompt_embeds=positive,
             negative_prompt_embeds=negative,
             generator=torch.manual_seed(seed),
@@ -199,10 +262,9 @@ class StageII:
             output_type="pt",
         ).images.cpu().float()
 
-        # crop the image back to init dims * 4
-        image = TF.center_crop(image, (height * 4, width * 4))
-        image = image.permute(0, 2, 3, 1)
-        return (image,)
+        images = TF.center_crop(images, [height * 4, width * 4])
+        images = images.permute(0, 2, 3, 1)
+        return (images,)
 
 
 class StageIII:
@@ -227,7 +289,8 @@ class StageIII:
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE",)
 
-    def process(self, model, image, tile, tile_size, noise, seed, steps, cfg, positive, negative):
+    def process(self, model: StableDiffusionUpscalePipeline, image, tile, tile_size, noise, seed, steps, cfg, positive,
+                negative):
         image = image.permute(0, 3, 1, 2)
         progress = ProgressBar(steps)
         batch_size = image.shape[0]

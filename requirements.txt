@@ -1,4 +1,4 @@
 bitsandbytes == 0.38.1; platform_system != "Windows"
 https://github.com/Zuellni/Bitsandbytes-Windows/raw/main/bitsandbytes-0.38.1-py3-none-any.whl; platform_system == "Windows"
 diffusers >= 0.16.1
-transformers
+transformers==2.0.0
