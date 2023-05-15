@@ -9,8 +9,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {}
 
 config = {
 	"Settings": {
-		"Update": False,
-		"Quiet Update": False,
+		"Update": True,
+		"Quiet Update": True,
 		"Suppress Warnings": True,
 	},
 	"Load Nodes": {
