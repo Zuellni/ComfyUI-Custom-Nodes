@@ -3,7 +3,6 @@ import importlib
 import inspect
 import json
 
-
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
@@ -71,8 +70,7 @@ for key, val in config["Load Nodes"].items():
 
 		for name, cls in inspect.getmembers(module, inspect.isclass):
 			if cls.__module__ == module.__name__:
-				node = f"{cls.__module__}.{name}"
+				node = f"Zuellni.{key}.{name}"
 				disp = f"{key} {name.replace('_', ' ')}"
-
 				NODE_CLASS_MAPPINGS[node] = cls
 				NODE_DISPLAY_NAME_MAPPINGS[node] = disp
