@@ -75,7 +75,7 @@ class Share:
 		for image in images:
 			image = 255.0 * image.cpu().numpy()
 			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-			image.save(output_dir / f"{prefix}{Save.COUNTER:05}.png")
-			Save.COUNTER += 1
+			image.save(output_dir / f"{prefix}{Share.COUNTER:05}.png")
+			Share.COUNTER += 1
 
 		return (None,)

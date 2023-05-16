@@ -9,7 +9,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {}
 
 config = {
 	"Settings": {
-		"Install Requirements": True,
+		"Install Requirements": False,
 		"Update Repository": False,
 		"Quiet Update": True,
 		"Suppress Warnings": True,
@@ -24,10 +24,11 @@ config = {
 }
 
 path = Path(__file__)
-config_path = path.with_name("config.json")
 git_path = path.parent
+config_path = path.with_name("config.json")
 req_path = path.with_name("requirements.txt")
 quiet = "-q" if config["Settings"]["Quiet Update"] else ""
+first_run = False
 
 if config_path.is_file():
 	with open(config_path, "r") as f:
@@ -38,6 +39,8 @@ if config_path.is_file():
 				for sub_key, sub_val in dict[key].items():
 					if sub_key in config[key]:
 						config[key][sub_key] = sub_val
+else:
+	first_run = True
 
 with open(config_path, "w") as f:
 	json.dump(config, f, indent = "\t", separators = (",", ": "))
@@ -46,8 +49,8 @@ if config["Settings"]["Update Repository"]:
 	print("\n[\033[94mZuellni\033[0m]: Updating repository...")
 	subprocess.run(f"git -C {git_path} pull {quiet}")
 
-if config["Settings"]["Install Requirements"]:
-	print("[\033[94mZuellni\033[0m]: Installing requirements...")
+if config["Settings"]["Install Requirements"] or first_run:
+	print("\n[\033[94mZuellni\033[0m]: Installing requirements...")
 	subprocess.run(f"pip install {quiet} --upgrade-strategy only-if-needed -r {req_path}")
 
 if config["Settings"]["Suppress Warnings"]:

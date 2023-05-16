@@ -21,16 +21,20 @@ class Loader:
 	FUNCTION = "process"
 	RETURN_NAMES = ("MODEL",)
 	RETURN_TYPES = ("IF_MODEL",)
+	ARGS = {
+		"variant": "fp16",
+		"torch_dtype": torch.float16,
+		"requires_safety_checker": False,
+		"feature_extractor": None,
+		"safety_checker": None,
+		"watermarker": None,
+	}
 
 	def process(self, model, device):
 		if model == "III":
 			model = DiffusionPipeline.from_pretrained(
 				"stabilityai/stable-diffusion-x4-upscaler",
-				torch_dtype = torch.float16,
-				requires_safety_checker = False,
-				feature_extractor = None,
-				safety_checker = None,
-				watermarker = None,
+				**Loader.ARGS,
 			)
 
 			if xformers_enabled():
@@ -38,13 +42,8 @@ class Loader:
 		else:
 			model = DiffusionPipeline.from_pretrained(
 				f"DeepFloyd/IF-{model}-v1.0",
-				variant="fp16",
-				torch_dtype = torch.float16,
-				requires_safety_checker = False,
-				feature_extractor = None,
-				safety_checker = None,
 				text_encoder = None,
-				watermarker = None,
+				**Loader.ARGS,
 			)
 
 		if device:
@@ -59,7 +58,9 @@ class Encode:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
+				"load_in_8bit": ([False, True], {"default": True}),
 				"unload": ([False, True], {"default": True}),
+				"device": ("STRING", {"default": ""}),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -68,28 +69,31 @@ class Encode:
 	CATEGORY = "Zuellni/IF"
 	FUNCTION = "process"
 	MODEL = None
+	MODEL_T5 = None
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
-	TEXT_ENCODER = None
 
-	def process(self, unload, positive, negative):
+	def process(self, load_in_8bit, unload, device, positive, negative):
 		if not Encode.MODEL:
-			Encode.TEXT_ENCODER = T5EncoderModel.from_pretrained(
+			Encode.MODEL_T5 = T5EncoderModel.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
-				subfolder="text_encoder",
-				variant="8bit",
-				load_in_8bit = True,
-				device_map="auto",
+				subfolder = "text_encoder",
+				load_in_8bit = load_in_8bit,
+				device_map = "auto" if load_in_8bit else None,
+				variant = "8bit" if load_in_8bit else "fp16",
 			)
 
 			Encode.MODEL = DiffusionPipeline.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
-				text_encoder = Encode.TEXT_ENCODER,
-				requires_safety_checker = False,
-				feature_extractor = None,
-				safety_checker = None,
+				text_encoder = Encode.MODEL_T5,
 				unet = None,
-				watermarker = None,
+				**Loader.ARGS,
 			)
+
+		if not load_in_8bit:
+			if device:
+				Encode.MODEL = Encode.MODEL.to(device)
+			else:
+				Encode.MODEL.enable_model_cpu_offload()
 
 		positive, negative = Encode.MODEL.encode_prompt(
 			prompt = positive,
@@ -97,10 +101,10 @@ class Encode:
 		)
 
 		if unload:
-			del Encode.MODEL, Encode.TEXT_ENCODER
-			gc.collect()
+			del Encode.MODEL, Encode.MODEL_T5
+			Encode.MODEL_T5 = None
 			Encode.MODEL = None
-			Encode.TEXT_ENCODER = None
+			gc.collect()
 
 		return (positive, negative,)
 
