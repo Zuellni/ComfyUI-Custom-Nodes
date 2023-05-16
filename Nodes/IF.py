@@ -13,7 +13,6 @@ class Loader:
 		return {
 			"required": {
 				"model": (["I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "I-M"}),
-				"compile": ([False, True], {"default": False}),
 				"device": ("STRING", {"default": ""}),
 			},
 		}
@@ -23,7 +22,7 @@ class Loader:
 	RETURN_NAMES = ("MODEL",)
 	RETURN_TYPES = ("IF_MODEL",)
 
-	def process(self, model, compile, device):
+	def process(self, model, device):
 		if model == "III":
 			model = DiffusionPipeline.from_pretrained(
 				"stabilityai/stable-diffusion-x4-upscaler",
@@ -47,9 +46,6 @@ class Loader:
 				text_encoder = None,
 				watermarker = None,
 			)
-			
-		if compile:
-			model.unet = torch.compile(model.unet)
 
 		if device:
 			return (model.to(device),)
