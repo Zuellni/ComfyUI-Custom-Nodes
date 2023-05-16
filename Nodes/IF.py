@@ -10,8 +10,7 @@ class Loader:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": (["none", "T5", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "none"}),
-				"load_in_8bit": ([False, True], {"default": False}),
+				"model": (["NONE", "T5-FP8", "T5-FP16", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "NONE"}),
 				"device": ("STRING", {"default": ""}),
 			},
 		}
@@ -21,7 +20,9 @@ class Loader:
 	RETURN_NAMES = ("MODEL",)
 	RETURN_TYPES = ("IF_MODEL",)
 
-	def process(self, model, load_in_8bit, device):
+	def process(self, model, device):
+		load_in_8bit = model == "T5-FP8"
+
 		config = {
 			"variant": "fp16",
 			"torch_dtype": torch.float16,
@@ -31,10 +32,10 @@ class Loader:
 			"watermarker": None,
 		}
 
-		if model == "none":
+		if model == "NONE":
 			return (None,)
 
-		if model == "T5":
+		if model.startswith("T5"):
 			text_encoder = T5EncoderModel.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
 				subfolder = "text_encoder",

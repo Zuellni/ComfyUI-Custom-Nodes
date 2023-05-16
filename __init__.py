@@ -46,11 +46,11 @@ with open(config_path, "w") as f:
 	json.dump(config, f, indent = "\t", separators = (",", ": "))
 
 if config["Settings"]["Update Repository"]:
-	print("\n[\033[94mZuellni\033[0m]: Updating repository...")
+	print("[\033[94mZuellni\033[0m]: Updating repository...")
 	subprocess.run(f"git -C {git_path} pull {quiet}")
 
 if config["Settings"]["Install Requirements"] or first_run:
-	print("\n[\033[94mZuellni\033[0m]: Installing requirements...")
+	print("[\033[94mZuellni\033[0m]: Installing requirements...")
 	subprocess.run(f"pip install {quiet} --upgrade-strategy only-if-needed -r {req_path}")
 
 if config["Settings"]["Suppress Warnings"]:
