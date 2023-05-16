@@ -1,10 +1,8 @@
 from comfy.model_management import throw_exception_if_processing_interrupted, xformers_enabled
-import torchvision.transforms.functional as TF
 from transformers import T5EncoderModel
 from diffusers import DiffusionPipeline
 from comfy.utils import ProgressBar
 import torch
-import gc
 
 
 class Loader:
@@ -12,7 +10,8 @@ class Loader:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"model": (["I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "I-M"}),
+				"model": (["none", "T5", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "none"}),
+				"load_in_8bit": ([False, True], {"default": False}),
 				"device": ("STRING", {"default": ""}),
 			},
 		}
@@ -21,20 +20,42 @@ class Loader:
 	FUNCTION = "process"
 	RETURN_NAMES = ("MODEL",)
 	RETURN_TYPES = ("IF_MODEL",)
-	ARGS = {
-		"variant": "fp16",
-		"torch_dtype": torch.float16,
-		"requires_safety_checker": False,
-		"feature_extractor": None,
-		"safety_checker": None,
-		"watermarker": None,
-	}
 
-	def process(self, model, device):
-		if model == "III":
+	def process(self, model, load_in_8bit, device):
+		config = {
+			"variant": "fp16",
+			"torch_dtype": torch.float16,
+			"requires_safety_checker": False,
+			"feature_extractor": None,
+			"safety_checker": None,
+			"watermarker": None,
+		}
+
+		if model == "none":
+			return (None,)
+
+		if model == "T5":
+			text_encoder = T5EncoderModel.from_pretrained(
+				"DeepFloyd/IF-I-M-v1.0",
+				subfolder = "text_encoder",
+				load_in_8bit = load_in_8bit,
+				device_map = "auto" if load_in_8bit else None,
+				variant = "8bit" if load_in_8bit else "fp16",
+			)
+
+			model = DiffusionPipeline.from_pretrained(
+				"DeepFloyd/IF-I-M-v1.0",
+				text_encoder = text_encoder,
+				unet = None,
+				**config,
+			)
+
+			if load_in_8bit:
+				return (model,)
+		elif model == "III":
 			model = DiffusionPipeline.from_pretrained(
 				"stabilityai/stable-diffusion-x4-upscaler",
-				**Loader.ARGS,
+				**config,
 			)
 
 			if xformers_enabled():
@@ -43,7 +64,7 @@ class Loader:
 			model = DiffusionPipeline.from_pretrained(
 				f"DeepFloyd/IF-{model}-v1.0",
 				text_encoder = None,
-				**Loader.ARGS,
+				**config,
 			)
 
 		if device:
@@ -58,9 +79,7 @@ class Encode:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
-				"load_in_8bit": ([False, True], {"default": True}),
-				"unload": ([False, True], {"default": True}),
-				"device": ("STRING", {"default": ""}),
+				"model": ("IF_MODEL",),
 				"positive": ("STRING", {"default": "", "multiline": True}),
 				"negative": ("STRING", {"default": "", "multiline": True}),
 			},
@@ -68,43 +87,13 @@ class Encode:
 
 	CATEGORY = "Zuellni/IF"
 	FUNCTION = "process"
-	MODEL = None
-	MODEL_T5 = None
 	RETURN_TYPES = ("POSITIVE", "NEGATIVE",)
 
-	def process(self, load_in_8bit, unload, device, positive, negative):
-		if not Encode.MODEL:
-			Encode.MODEL_T5 = T5EncoderModel.from_pretrained(
-				"DeepFloyd/IF-I-M-v1.0",
-				subfolder = "text_encoder",
-				load_in_8bit = load_in_8bit,
-				device_map = "auto" if load_in_8bit else None,
-				variant = "8bit" if load_in_8bit else "fp16",
-			)
-
-			Encode.MODEL = DiffusionPipeline.from_pretrained(
-				"DeepFloyd/IF-I-M-v1.0",
-				text_encoder = Encode.MODEL_T5,
-				unet = None,
-				**Loader.ARGS,
-			)
-
-		if not load_in_8bit:
-			if device:
-				Encode.MODEL = Encode.MODEL.to(device)
-			else:
-				Encode.MODEL.enable_model_cpu_offload()
-
-		positive, negative = Encode.MODEL.encode_prompt(
+	def process(self, model, positive, negative):
+		positive, negative = model.encode_prompt(
 			prompt = positive,
 			negative_prompt = negative,
 		)
-
-		if unload:
-			del Encode.MODEL, Encode.MODEL_T5
-			Encode.MODEL_T5 = None
-			Encode.MODEL = None
-			gc.collect()
 
 		return (positive, negative,)
 
@@ -114,11 +103,11 @@ class Stage_I:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
+				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
-				"model": ("IF_MODEL",),
-				"width": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
-				"height": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
+				"width": ("INT", {"default": 64, "min": 16, "max": 128, "step": 16}),
+				"height": ("INT", {"default": 64, "min": 16, "max": 128, "step": 16}),
 				"batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -141,14 +130,14 @@ class Stage_I:
 		images = model(
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
-			width = width,
 			height = height,
+			width = width,
 			generator = torch.manual_seed(seed),
 			guidance_scale = cfg,
 			num_images_per_prompt = batch_size,
 			num_inference_steps = steps,
 			callback = callback,
-			output_type="pt",
+			output_type = "pt",
 		).images
 
 		images = (images / 2 + 0.5).clamp(0, 1)
@@ -161,9 +150,9 @@ class Stage_II:
 	def INPUT_TYPES(s):
 		return {
 			"required": {
+				"model": ("IF_MODEL",),
 				"positive": ("POSITIVE",),
 				"negative": ("NEGATIVE",),
-				"model": ("IF_MODEL",),
 				"images": ("IMAGE",),
 				"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
 				"steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -179,10 +168,7 @@ class Stage_II:
 	def process(self, model, images, positive, negative, seed, steps, cfg):
 		images = images.permute(0, 3, 1, 2)
 		progress = ProgressBar(steps)
-		batch_size, channels, height, width = images.shape
-		max_dim = max(height, width)
-		images = TF.center_crop(images, max_dim)
-		model.unet.config.sample_size = max_dim * 4
+		batch_size = images.shape[0]
 
 		if batch_size > 1:
 			positive = positive.repeat(batch_size, 1, 1)
@@ -196,15 +182,15 @@ class Stage_II:
 			image = images,
 			prompt_embeds = positive,
 			negative_prompt_embeds = negative,
+			height = images.shape[2] * 4,
+			width = images.shape[3] * 4,
 			generator = torch.manual_seed(seed),
 			guidance_scale = cfg,
 			num_inference_steps = steps,
 			callback = callback,
-			output_type="pt",
-		).images.cpu().float()
+			output_type = "pt",
+		).images.cpu().float().permute(0, 2, 3, 1)
 
-		images = TF.center_crop(images, (height * 4, width * 4))
-		images = images.permute(0, 2, 3, 1)
 		return (images,)
 
 
@@ -257,7 +243,7 @@ class Stage_III:
 			guidance_scale = cfg,
 			num_inference_steps = steps,
 			callback = callback,
-			output_type="pt",
+			output_type = "pt",
 		).images.cpu().float().permute(0, 2, 3, 1)
 
 		return (images,)
