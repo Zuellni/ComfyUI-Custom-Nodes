@@ -30,19 +30,19 @@ class Loader:
             {
                 "aesthetic": {
                     "pipe": pipe(aesthetic, "cafeai/cafe_aesthetic"),
-                    "weights": [-1, 1],
+                    "weights": [0.0, 1.0],
                 },
                 "style": {
                     "pipe": pipe(style, "cafeai/cafe_style"),
-                    "weights": [1, 1, 1, -1, -1],
+                    "weights": [1.0, 1.0, 1.0, 0.0, 0.0],
                 },
                 "waifu": {
                     "pipe": pipe(waifu, "cafeai/cafe_waifu"),
-                    "weights": [-1, 1],
+                    "weights": [0.0, 1.0],
                 },
                 "age": {
                     "pipe": pipe(age, "nateraw/vit-age-classifier"),
-                    "weights": [-1, -1, 1, 1, -1, -1, -1, -1, -1],
+                    "weights": [0.0, 0.5, 1.0, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0],
                 },
             },
         )
@@ -85,14 +85,14 @@ class Select:
             image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
             score = 0.0
 
-            for value in models.values():
-                pipe = value["pipe"]
+            for model in models.values():
+                pipe = model["pipe"]
 
                 if pipe:
-                    weights = value["weights"]
                     labels = pipe.model.config.id2label
-                    map = {labels[i]: weights[i] for i in range(len(weights))}
-                    num = len(map)
+                    weights = model["weights"]
+                    num = len(weights)
+                    map = {labels[i]: weights[i] for i in range(num)}
                     items = pipe(image, top_k=num)
                     score += sum(v["score"] * map[v["label"]] / num for v in items)
 
