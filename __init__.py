@@ -31,22 +31,28 @@ quiet = "-q" if config["Settings"]["Quiet Update"] else ""
 first_run = False
 
 if config_path.is_file():
-	with open(config_path, "r") as f:
-		try:
-			dict = json.load(f)
+	try:
+		with open(config_path, "r") as f:
+			try:
+				dict = json.load(f)
 
-			for key, val in dict.items():
-				if key in config:
-					for sub_key, sub_val in dict[key].items():
-						if sub_key in config[key]:
-							config[key][sub_key] = sub_val
-		except:
-			print("[\033[94mZuellni\033[0m]: Invalid config. Loading defaults...")
+				for key, val in dict.items():
+					if key in config:
+						for sub_key, sub_val in dict[key].items():
+							if sub_key in config[key]:
+								config[key][sub_key] = sub_val
+			except:
+				print("[\033[94mZuellni\033[0m]: Invalid config. Loading defaults...")
+	except:
+		print("[\033[94mZuellni\033[0m]: Couldn't open config. Loading defaults...")
 else:
 	first_run = True
 
-with open(config_path, "w") as f:
-	json.dump(config, f, indent = "\t", separators = (",", ": "))
+try:
+	with open(config_path, "w") as f:
+		json.dump(config, f, indent = "\t", separators = (",", ": "))
+except:
+	print("[\033[94mZuellni\033[0m]: Couldn't save config. Proceeding...")
 
 if config["Settings"]["Update Repository"]:
 	print("[\033[94mZuellni\033[0m]: Updating repository...")
