@@ -36,11 +36,11 @@ if config_path.is_file():
             try:
                 dict = json.load(f)
 
-                for key, val in dict.items():
+                for key in dict:
                     if key in config:
-                        for sub_key, sub_val in dict[key].items():
-                            if sub_key in config[key]:
-                                config[key][sub_key] = sub_val
+                        for k, v in dict[key].items():
+                            if k in config[key]:
+                                config[key][k] = v
             except:
                 print("[\033[94mZuellni\033[0m]: Invalid config. Loading defaults...")
     except:
@@ -69,15 +69,16 @@ if config["Settings"]["Suppress Warnings"]:
     import logging
 
     filterwarnings("ignore", category=UserWarning, message="TypedStorage is deprecated")
-    filterwarnings("ignore", category=UserWarning, message="You seem to be using the pipelines sequentially on GPU")
+    filterwarnings("ignore", category=UserWarning, message="The default value of the antialias parameter")
+    filterwarnings("ignore", category=UserWarning, message="You seem to be using the pipelines sequentially")
     filterwarnings("ignore", category=FutureWarning, message="The `reduce_labels` parameter is deprecated")
 
     logging.getLogger("xformers").addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
     transformers_logging.set_verbosity_error()
     diffusers_logging.set_verbosity_error()
 
-for key, val in config["Load Nodes"].items():
-    if val:
+for key, value in config["Load Nodes"].items():
+    if value:
         module = importlib.import_module(f".Nodes.{key}", package=__name__)
 
         for name, cls in inspect.getmembers(module, inspect.isclass):

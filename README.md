@@ -21,7 +21,7 @@ git -C custom_nodes\Zuellni pull
 Name | Description
 :--- | :---
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Select`.
-Aesthetic&nbsp;Select | Returns `count` best images and latents based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image/latent with 1-based index. Setting `count` to 0 stops processing for connected nodes.
+Aesthetic&nbsp;Select | Returns `count` best images/latents based on [aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[style](https://huggingface.co/cafeai/cafe_style)/[waifu](https://huggingface.co/cafeai/cafe_waifu)/[age](https://huggingface.co/nateraw/vit-age-classifier) classifiers. If no models are selected then acts like `LatentFromBatch` and returns 1 image/latent with 1-based index. Setting `count` to 0 stops processing for connected nodes.
 
 ## IF Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically but you will have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.

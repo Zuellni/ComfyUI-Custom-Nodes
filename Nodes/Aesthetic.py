@@ -11,23 +11,63 @@ class Loader:
         return {
             "required": {
                 "aesthetic": ([False, True], {"default": True}),
+                "style": ([False, True], {"default": True}),
                 "waifu": ([False, True], {"default": True}),
+                "age": ([False, True], {"default": True}),
             },
         }
 
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
-    RETURN_NAMES = ("MODEL",)
+    RETURN_NAMES = ("MODELS",)
     RETURN_TYPES = ("AE_MODEL",)
 
-    def process(self, aesthetic, waifu):
-        if aesthetic:
-            aesthetic = pipeline("image-classification", "cafeai/cafe_aesthetic", device=get_torch_device())
+    def process(self, aesthetic, style, waifu, age):
+        def pipe(load, model):
+            return pipeline(model=model) if load else None
 
-        if waifu:
-            waifu = pipeline("image-classification", "cafeai/cafe_waifu", device=get_torch_device())
-
-        return ({"aesthetic": aesthetic, "waifu": waifu},)
+        return (
+            {
+                "aesthetic": {
+                    "pipe": pipe(aesthetic, "cafeai/cafe_aesthetic"),
+                    "map": {
+                        "not_aesthetic": -1.0,
+                        "aesthetic": 1.0,
+                    },
+                },
+                "style": {
+                    "pipe": pipe(style, "cafeai/cafe_style"),
+                    "map": {
+                        "anime": 1.0,
+                        "real_life": 1.0,
+                        "3d": 1.0,
+                        "manga_like": -1.0,
+                        "other": -1.0,
+                    },
+                },
+                "waifu": {
+                    "pipe": pipe(waifu, "cafeai/cafe_waifu"),
+                    "map": {
+                        "not_waifu": -1.0,
+                        "waifu": 1.0,
+                    },
+                },
+                "age": {
+                    "pipe": pipe(age, "nateraw/vit-age-classifier"),
+                    "map": {
+                        "0-2": -1.0,
+                        "3-9": -1.0,
+                        "10-19": 1.0,
+                        "20-29": 1.0,
+                        "30-39": -1.0,
+                        "40-49": -1.0,
+                        "50-59": -1.0,
+                        "60-69": -1.0,
+                        "more than 70": -1.0,
+                    },
+                },
+            },
+        )
 
 
 class Select:
@@ -40,42 +80,41 @@ class Select:
             },
             "optional": {
                 "latents": ("LATENT",),
-                "model": ("AE_MODEL",),
+                "models": ("AE_MODEL",),
             },
         }
 
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
     RETURN_NAMES = ("IMAGES", "LATENTS")
-    RETURN_TYPES = ("IMAGE", "LATENTS")
+    RETURN_TYPES = ("IMAGE", "LATENT")
 
-    def process(self, count, images, latents=None, model=None):
+    def process(self, count, images, latents=None, models=None):
         if not count:
             raise InterruptProcessingException()
 
-        aesthetic = model["aesthetic"] if model else None
-        waifu = model["waifu"] if model else None
-        scores = {}
-
-        if not aesthetic and not waifu:
+        if not models or all(not v["pipe"] for v in models.values()):
             if latents:
                 latents = latents["samples"]
                 latents = {"samples": latents[count - 1].unsqueeze(0)}
 
             return (images[count - 1].unsqueeze(0), latents)
 
+        scores = {}
+
         for index, image in enumerate(images):
             image = 255.0 * image.cpu().numpy()
             image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
             score = 0.0
 
-            if aesthetic:
-                for item in aesthetic(image, top_k=2):
-                    score += item["score"] * (1.0 if item["label"] == "aesthetic" else -1.0)
+            for value in models.values():
+                pipe = value["pipe"]
 
-            if waifu:
-                for item in waifu(image, top_k=2):
-                    score += item["score"] * (1.0 if item["label"] == "waifu" else -1.0)
+                if pipe:
+                    map = value["map"]
+                    keys = len(map)
+                    items = pipe(image, top_k=keys)
+                    score += sum(v["score"] * map[v["label"]] / keys for v in items)
 
             scores[index] = score
 

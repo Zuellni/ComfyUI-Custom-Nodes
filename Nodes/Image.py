@@ -24,16 +24,16 @@ class Batch:
 
     def process(self, input_dir, file_type):
         input_dir = Path(input_dir)
-        min_height = None
-        min_width = None
+        min_height = float("inf")
+        min_width = float("inf")
         images = []
 
         for image in list(input_dir.glob(f"*.{file_type}")):
             image = Image.open(image)
             image = TF.to_tensor(image)
             image = image[:3, :, :]
-            min_height = min(min_height, image.shape[1]) if min_height else image.shape[1]
-            min_width = min(min_width, image.shape[2]) if min_width else image.shape[2]
+            min_height = min(min_height, image.shape[1])
+            min_width = min(min_width, image.shape[2])
             images.append(image)
 
         if not images:
