@@ -30,41 +30,19 @@ class Loader:
             {
                 "aesthetic": {
                     "pipe": pipe(aesthetic, "cafeai/cafe_aesthetic"),
-                    "map": {
-                        "not_aesthetic": -1.0,
-                        "aesthetic": 1.0,
-                    },
+                    "weights": [-1, 1],
                 },
                 "style": {
                     "pipe": pipe(style, "cafeai/cafe_style"),
-                    "map": {
-                        "anime": 1.0,
-                        "real_life": 1.0,
-                        "3d": 1.0,
-                        "manga_like": -1.0,
-                        "other": -1.0,
-                    },
+                    "weights": [1, 1, 1, -1, -1],
                 },
                 "waifu": {
                     "pipe": pipe(waifu, "cafeai/cafe_waifu"),
-                    "map": {
-                        "not_waifu": -1.0,
-                        "waifu": 1.0,
-                    },
+                    "weights": [-1, 1],
                 },
                 "age": {
                     "pipe": pipe(age, "nateraw/vit-age-classifier"),
-                    "map": {
-                        "0-2": -1.0,
-                        "3-9": -1.0,
-                        "10-19": 1.0,
-                        "20-29": 1.0,
-                        "30-39": -1.0,
-                        "40-49": -1.0,
-                        "50-59": -1.0,
-                        "60-69": -1.0,
-                        "more than 70": -1.0,
-                    },
+                    "weights": [-1, -1, 1, 1, -1, -1, -1, -1, -1],
                 },
             },
         )
@@ -111,10 +89,12 @@ class Select:
                 pipe = value["pipe"]
 
                 if pipe:
-                    map = value["map"]
-                    keys = len(map)
-                    items = pipe(image, top_k=keys)
-                    score += sum(v["score"] * map[v["label"]] / keys for v in items)
+                    weights = value["weights"]
+                    labels = pipe.model.config.id2label
+                    map = {labels[i]: weights[i] for i in range(len(weights))}
+                    num = len(map)
+                    items = pipe(image, top_k=num)
+                    score += sum(v["score"] * map[v["label"]] / num for v in items)
 
             scores[index] = score
 
