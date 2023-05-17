@@ -4,7 +4,8 @@ Clone the repository to `custom_nodes` in your ComfyUI directory:
 ```
 git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
 ```
-A `config.json` file will be created on first run in the extension's directory. Requirements should be installed automatically but if it doesn't happen you can install them with:
+A `config.json` file will be created on first run in the extension's directory.  
+Requirements should be installed automatically but if it doesn't happen you can install them with:
 ```
 pip install -r custom_nodes\Zuellni\requirements.txt
 ```
@@ -18,7 +19,7 @@ Name | Description
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Select`.
 Aesthetic&nbsp;Select | Returns `count` best images and latents based on [cafe_aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[cafe_waifu](https://huggingface.co/cafeai/cafe_waifu) scoring. If no models are loaded then acts like `LatentFromBatch` and returns 1 image/latent with 1-based index. Setting `count` to 0 stops processing for connected nodes.
 ## IF Nodes
-A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically but you will first have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically but you will have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.
 Name | Description
 :--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes. `Device` can be used to move the models to specific devices, eg `cpu`, `cuda:0`, `cuda:1`. Leaving it empty enables offloading.
