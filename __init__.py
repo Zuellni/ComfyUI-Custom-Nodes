@@ -32,13 +32,16 @@ first_run = False
 
 if config_path.is_file():
 	with open(config_path, "r") as f:
-		dict = json.load(f)
+		try:
+			dict = json.load(f)
 
-		for key, val in dict.items():
-			if key in config:
-				for sub_key, sub_val in dict[key].items():
-					if sub_key in config[key]:
-						config[key][sub_key] = sub_val
+			for key, val in dict.items():
+				if key in config:
+					for sub_key, sub_val in dict[key].items():
+						if sub_key in config[key]:
+							config[key][sub_key] = sub_val
+		except:
+			print("[\033[94mZuellni\033[0m]: Invalid config. Loading defaults...")
 else:
 	first_run = True
 
