@@ -1,3 +1,3 @@
-bitsandbytes; platform_system != "Windows"
+bitsandbytes >= 0.38.1; platform_system != "Windows"
 https://github.com/Zuellni/Bitsandbytes-Windows/raw/main/bitsandbytes-0.38.1-py3-none-any.whl; platform_system == "Windows"
 git+https://github.com/Zuellni/Diffusers.git
