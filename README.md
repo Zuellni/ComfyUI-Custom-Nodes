@@ -36,7 +36,7 @@ IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffu
 ## Other Nodes
 Name | Description
 :--- | :---
-Image&nbsp;Folder | Loads all images in a specified directory. The images will be cropped/padded/resized if their dimensions aren't equal.
+Image&nbsp;Batch | Loads all images in a specified directory. The images will be cropped/padded/resized if their dimensions aren't equal.
 Image&nbsp;Share | Saves images without metadata in a specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
 Latent&nbsp;Decode | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encode | As above, but adds `batch_size`. Allows loading 1 image and denoising it `batch_size` times without having to create multiple sampler nodes.

@@ -1,4 +1,4 @@
-from comfy.model_management import get_torch_device
+from comfy.model_management import InterruptProcessingException, get_torch_device
 from transformers import pipeline
 from PIL import Image
 import numpy as np
@@ -50,8 +50,8 @@ class Select:
 	RETURN_TYPES = ("IMAGE","LATENT",)
 
 	def process(self, count, images, latents = None, model = None):
-		if count == 0:
-			return (None,)
+		if not count:
+			raise InterruptProcessingException()
 
 		aesthetic = model["aesthetic"] if model else None
 		waifu = model["waifu"] if model else None

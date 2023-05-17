@@ -86,7 +86,7 @@ class Noise:
 	RETURN_TYPES = ("IMAGE", "LATENT",)
 
 	def process(self, strength, images = None, latents = None):
-		if strength > 0.0:
+		if strength:
 			if images is not None:
 				noise = torch.randn(images.shape)
 				images = images + noise * strength

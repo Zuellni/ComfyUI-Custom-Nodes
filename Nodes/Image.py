@@ -1,4 +1,5 @@
 from folder_paths import get_input_directory, get_output_directory
+from comfy.model_management import InterruptProcessingException
 import torchvision.transforms.functional as TF
 from pathlib import Path
 from PIL import Image
@@ -36,7 +37,7 @@ class Batch:
 			images.append(image)
 
 		if not images:
-			return (None,)
+			raise InterruptProcessingException()
 
 		if len(images) > 1:
 			min_dim = min(min_height, min_width)
@@ -69,13 +70,10 @@ class Share:
 		output_dir = Path(output_dir)
 		output_dir.mkdir(parents = True, exist_ok = True)
 
-		if prefix:
-			prefix = f"{prefix}_"
-
 		for image in images:
 			image = 255.0 * image.cpu().numpy()
 			image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-			image.save(output_dir / f"{prefix}{Share.COUNTER:05}.png")
+			image.save(output_dir / f"{f'{prefix}_' if prefix else ''}{Share.COUNTER:05}.png")
 			Share.COUNTER += 1
 
 		return (None,)

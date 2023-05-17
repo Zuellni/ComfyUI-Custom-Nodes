@@ -1,4 +1,4 @@
-from comfy.model_management import throw_exception_if_processing_interrupted
+from comfy.model_management import InterruptProcessingException, throw_exception_if_processing_interrupted
 from transformers import T5EncoderModel
 from diffusers import DiffusionPipeline
 from comfy.utils import ProgressBar
@@ -22,7 +22,7 @@ class Loader:
 
 	def process(self, model, device):
 		if model == "NONE":
-			return (None,)
+			raise InterruptProcessingException()
 
 		config = {
 			"variant": "fp16",
