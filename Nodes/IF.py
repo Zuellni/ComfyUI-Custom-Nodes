@@ -1,4 +1,4 @@
-from comfy.model_management import throw_exception_if_processing_interrupted, xformers_enabled
+from comfy.model_management import throw_exception_if_processing_interrupted
 from transformers import T5EncoderModel
 from diffusers import DiffusionPipeline
 from comfy.utils import ProgressBar
@@ -21,7 +21,8 @@ class Loader:
 	RETURN_TYPES = ("IF_MODEL",)
 
 	def process(self, model, device):
-		load_in_8bit = model == "T5-FP8"
+		if model == "NONE":
+			return (None,)
 
 		config = {
 			"variant": "fp16",
@@ -32,10 +33,9 @@ class Loader:
 			"watermarker": None,
 		}
 
-		if model == "NONE":
-			return (None,)
-
 		if model.startswith("T5"):
+			load_in_8bit = model == "T5-FP8"
+
 			text_encoder = T5EncoderModel.from_pretrained(
 				"DeepFloyd/IF-I-M-v1.0",
 				subfolder = "text_encoder",
@@ -58,9 +58,6 @@ class Loader:
 				"stabilityai/stable-diffusion-x4-upscaler",
 				**config,
 			)
-
-			if xformers_enabled():
-				model.enable_xformers_memory_efficient_attention()
 		else:
 			model = DiffusionPipeline.from_pretrained(
 				f"DeepFloyd/IF-{model}-v1.0",
