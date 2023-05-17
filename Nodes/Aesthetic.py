@@ -24,7 +24,7 @@ class Loader:
 
     def process(self, aesthetic, style, waifu, age):
         def pipe(load, model):
-            return pipeline(model=model) if load else None
+            return pipeline(model=model, device=get_torch_device()) if load else None
 
         return (
             {

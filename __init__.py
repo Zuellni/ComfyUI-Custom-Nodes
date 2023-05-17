@@ -36,9 +36,9 @@ if config_path.is_file():
             try:
                 dict = json.load(f)
 
-                for key in dict:
+                for key, value in dict.items():
                     if key in config:
-                        for k, v in dict[key].items():
+                        for k, v in value.items():
                             if k in config[key]:
                                 config[key][k] = v
             except:
