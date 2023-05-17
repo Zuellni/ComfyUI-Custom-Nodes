@@ -89,11 +89,13 @@ class Noise:
 	def process(self, strength, color, images = None, latents = None):
 		if strength:
 			if images is not None:
-				images = images + torch.randn(images.shape[:3] + (3 if color else 1,)) * strength
+				noise = torch.randn(images.shape[:3] + (images.shape[3] if color else 1,))
+				images = images + noise * strength
 
 			if latents is not None:
 				latents = latents["samples"]
-				latents = latents + torch.randn(latents.shape) * strength
+				noise = torch.randn(latents.shape[:1] + (latents.shape[1] if color else 1,) + latents.shape[2:])
+				latents = latents + noise * strength
 				latents = {"samples": latents}
 
 		return (images, latents,)
