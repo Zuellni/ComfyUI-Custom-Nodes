@@ -40,7 +40,7 @@ Image&nbsp;Batch | Loads all images in a specified directory. The images will be
 Image&nbsp;Share | Saves images without metadata in a specified directory. Counter resets on restart. Useful for sharing images without having to remove prompts manually.
 Latent&nbsp;Decode | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encode | As above, but adds `batch_size`. Allows loading 1 image and denoising it `batch_size` times without having to create multiple sampler nodes.
-Multi&nbsp;Crop | Center crops images/latents to specified dimensions.
+Multi&nbsp;Crop | Center crops/pads images/latents to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `batch_size` times, similar to `Latent Encode`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to upscale images/latents.
