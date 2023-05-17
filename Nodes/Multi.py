@@ -73,6 +73,7 @@ class Noise:
 		return {
 			"required": {
 				"strength": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01}),
+				"color": ([False, True], {"default": False}),
 			},
 			"optional": {
 				"images": ("IMAGE",),
@@ -85,16 +86,15 @@ class Noise:
 	RETURN_NAMES = ("IMAGES", "LATENTS",)
 	RETURN_TYPES = ("IMAGE", "LATENT",)
 
-	def process(self, strength, images = None, latents = None):
+	def process(self, strength, color, images = None, latents = None):
 		if strength:
 			if images is not None:
-				noise = torch.randn(images.shape)
-				images = images + noise * strength
+				images = images + torch.randn(images.shape[:3] + (3 if color else 1,)) * strength
 
 			if latents is not None:
 				latents = latents["samples"]
-				noise = torch.randn(latents.shape)
-				latents = {"samples": latents + noise * strength}
+				latents = latents + torch.randn(latents.shape) * strength
+				latents = {"samples": latents}
 
 		return (images, latents,)
 
