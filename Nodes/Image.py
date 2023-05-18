@@ -43,8 +43,8 @@ class Batch:
 
         if len(images) > 1:
             min_dim = min(min_height, min_width)
-            images = [TF.resize(image, min_dim) for image in images]
-            images = [TF.center_crop(image, (min_height, min_width)) for image in images]
+            images = [TF.resize(v, min_dim) for v in images]
+            images = [TF.center_crop(v, (min_height, min_width)) for v in images]
 
         images = torch.stack(images)
         images = images.permute(0, 2, 3, 1)

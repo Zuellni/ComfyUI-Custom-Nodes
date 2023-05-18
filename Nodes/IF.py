@@ -1,5 +1,8 @@
 import torch
-from comfy.model_management import InterruptProcessingException, throw_exception_if_processing_interrupted
+from comfy.model_management import (
+    InterruptProcessingException,
+    throw_exception_if_processing_interrupted,
+)
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
 from transformers import T5EncoderModel
@@ -10,7 +13,10 @@ class Loader:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "model": (["NONE", "T5-FP8", "T5-FP16", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"], {"default": "NONE"}),
+                "model": (
+                    ["NONE", "T5-FP8", "T5-FP16", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"],
+                    {"default": "NONE"},
+                ),
                 "device": ("STRING", {"default": ""}),
             },
         }

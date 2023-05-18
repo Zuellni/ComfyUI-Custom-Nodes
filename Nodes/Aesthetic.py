@@ -77,7 +77,8 @@ class Select:
 
             if latents:
                 latents = latents["samples"]
-                latents = {"samples": latents[count - 1].unsqueeze(0)}
+                latents = latents[count - 1].unsqueeze(0)
+                latents = {"samples": latents}
 
             return (images, latents)
 
@@ -97,8 +98,10 @@ class Select:
                     w_len = len(weights)
                     w_sum = sum(weights)
                     w_map = {labels[i]: weights[i] for i in range(w_len)}
+
                     items = pipe(image, top_k=w_len)
-                    score += sum(v["score"] * w_map[v["label"]] / w_sum for v in items)
+                    items = [v["score"] * w_map[v["label"]] / w_sum for v in items]
+                    score += sum(items)
 
             scores[index] = score
 
@@ -109,6 +112,7 @@ class Select:
         if latents:
             latents = latents["samples"]
             latents = [latents[v[0]] for v in scores[:count]]
-            latents = {"samples": torch.stack(latents)}
+            latents = torch.stack(latents)
+            latents = {"samples": latents}
 
         return (images, latents)

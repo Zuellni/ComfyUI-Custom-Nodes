@@ -89,12 +89,14 @@ class Noise:
     def process(self, strength, color, images=None, latents=None):
         if strength:
             if images is not None:
-                noise = torch.randn(images.shape[:3] + (images.shape[3] if color else 1,))
+                shape = (images.shape[3] if color else 1,)
+                noise = torch.randn(images.shape[:3] + shape)
                 images = images + noise * strength
 
             if latents:
                 latents = latents["samples"]
-                noise = torch.randn(latents.shape[:1] + (latents.shape[1] if color else 1,) + latents.shape[2:])
+                shape = (latents.shape[1] if color else 1,)
+                noise = torch.randn(latents.shape[:1] + shape + latents.shape[2:])
                 latents = latents + noise * strength
                 latents = {"samples": latents}
 
@@ -107,7 +109,10 @@ class Resize:
         return {
             "required": {
                 "scale": ("FLOAT", {"default": 2.0, "min": 0.01, "max": 10.0, "step": 0.01}),
-                "mode": (["area", "bicubic", "bilinear", "nearest", "nearest-exact"], {"default": "nearest-exact"}),
+                "mode": (
+                    ["area", "bicubic", "bilinear", "nearest", "nearest-exact"],
+                    {"default": "nearest-exact"},
+                ),
             },
             "optional": {
                 "images": ("IMAGE",),

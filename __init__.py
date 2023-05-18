@@ -69,14 +69,16 @@ if config["Settings"]["Suppress Warnings"]:
     from diffusers import logging as diffusers_logging
     from transformers import logging as transformers_logging
 
-    filterwarnings("ignore", category=UserWarning, message="TypedStorage is deprecated")
-    filterwarnings("ignore", category=UserWarning, message="The default value of the antialias parameter")
-    filterwarnings("ignore", category=UserWarning, message="You seem to be using the pipelines sequentially")
-    filterwarnings("ignore", category=FutureWarning, message="The `reduce_labels` parameter is deprecated")
-
-    logging.getLogger("xformers").addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
     transformers_logging.set_verbosity_error()
     diffusers_logging.set_verbosity_error()
+
+    filterwarnings("ignore", "TypedStorage is deprecated", UserWarning)
+    filterwarnings("ignore", "The default value of the antialias parameter", UserWarning)
+    filterwarnings("ignore", "You seem to be using the pipelines sequentially", UserWarning)
+    filterwarnings("ignore", "The `reduce_labels` parameter is deprecated", UserWarning)
+
+    logger = logging.getLogger("xformers")
+    logger.addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
 
 for key, value in config["Load Nodes"].items():
     if value:
@@ -86,5 +88,6 @@ for key, value in config["Load Nodes"].items():
             if cls.__module__ == module.__name__:
                 node = f"Zuellni.{key}.{name}"
                 disp = f"{key} {name.replace('_', ' ')}"
+
                 NODE_CLASS_MAPPINGS[node] = cls
                 NODE_DISPLAY_NAME_MAPPINGS[node] = disp

@@ -15,7 +15,8 @@ class Decode:
     RETURN_TYPES = ("IMAGE",)
 
     def process(self, latents, vae, tile):
-        return (vae.decode_tiled(latents["samples"]) if tile else vae.decode(latents["samples"]),)
+        latents = latents["samples"]
+        return (vae.decode_tiled(latents) if tile else vae.decode(latents),)
 
 
 class Encode:
