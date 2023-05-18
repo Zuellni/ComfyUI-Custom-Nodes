@@ -2,6 +2,7 @@ from folder_paths import get_input_directory, get_output_directory
 from comfy.model_management import InterruptProcessingException
 import torchvision.transforms.functional as TF
 from pathlib import Path
+from uuid import uuid4
 from PIL import Image
 import numpy as np
 import torch
@@ -56,24 +57,21 @@ class Share:
             "required": {
                 "images": ("IMAGE",),
                 "output_dir": ("STRING", {"default": get_output_directory()}),
-                "prefix": ("STRING", {"default": ""}),
             },
         }
 
     CATEGORY = "Zuellni/Image"
-    COUNTER = 1
     FUNCTION = "process"
     OUTPUT_NODE = True
     RETURN_TYPES = ()
 
-    def process(self, images, output_dir, prefix):
+    def process(self, images, output_dir):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for image in images:
             image = 255.0 * image.cpu().numpy()
             image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-            image.save(output_dir / f"{f'{prefix}_' if prefix else ''}{Share.COUNTER:05}.png")
-            Share.COUNTER += 1
+            image.save(output_dir / f"{uuid4().hex[:16]}.png")
 
         return (None,)
