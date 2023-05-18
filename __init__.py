@@ -75,7 +75,7 @@ if config["Settings"]["Suppress Warnings"]:
     filterwarnings("ignore", "TypedStorage is deprecated", UserWarning)
     filterwarnings("ignore", "The default value of the antialias parameter", UserWarning)
     filterwarnings("ignore", "You seem to be using the pipelines sequentially", UserWarning)
-    filterwarnings("ignore", "The `reduce_labels` parameter is deprecated", UserWarning)
+    filterwarnings("ignore", "The `reduce_labels` parameter is deprecated", FutureWarning)
 
     logger = logging.getLogger("xformers")
     logger.addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
