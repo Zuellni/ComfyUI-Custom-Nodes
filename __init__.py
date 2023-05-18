@@ -1,8 +1,8 @@
-from pathlib import Path
-import subprocess
 import importlib
 import inspect
 import json
+import subprocess
+from pathlib import Path
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -63,10 +63,11 @@ if config["Settings"]["Install Requirements"] or first_run:
     subprocess.run(f"pip install {quiet} --upgrade-strategy only-if-needed -r {req_path}")
 
 if config["Settings"]["Suppress Warnings"]:
-    from transformers import logging as transformers_logging
-    from diffusers import logging as diffusers_logging
-    from warnings import filterwarnings
     import logging
+    from warnings import filterwarnings
+
+    from diffusers import logging as diffusers_logging
+    from transformers import logging as transformers_logging
 
     filterwarnings("ignore", category=UserWarning, message="TypedStorage is deprecated")
     filterwarnings("ignore", category=UserWarning, message="The default value of the antialias parameter")

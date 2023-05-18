@@ -1,8 +1,8 @@
-from comfy.model_management import InterruptProcessingException, get_torch_device
-from transformers import pipeline
-from PIL import Image
 import numpy as np
 import torch
+from comfy.model_management import InterruptProcessingException, get_torch_device
+from PIL import Image
+from transformers import pipeline
 
 
 class Loader:

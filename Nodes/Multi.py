@@ -1,6 +1,6 @@
-from torchvision.transforms import functional as TF
-from torch.nn import functional as F
 import torch
+from torch.nn import functional as F
+from torchvision.transforms import functional as TF
 
 
 class Crop:

@@ -1,8 +1,8 @@
-from comfy.model_management import InterruptProcessingException, throw_exception_if_processing_interrupted
-from transformers import T5EncoderModel
-from diffusers import DiffusionPipeline
-from comfy.utils import ProgressBar
 import torch
+from comfy.model_management import InterruptProcessingException, throw_exception_if_processing_interrupted
+from comfy.utils import ProgressBar
+from diffusers import DiffusionPipeline
+from transformers import T5EncoderModel
 
 
 class Loader:
