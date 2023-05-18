@@ -1,6 +1,6 @@
 from folder_paths import get_input_directory, get_output_directory
 from comfy.model_management import InterruptProcessingException
-import torchvision.transforms.functional as TF
+from torchvision.transforms import functional as TF
 from pathlib import Path
 from uuid import uuid4
 from PIL import Image

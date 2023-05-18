@@ -1,5 +1,5 @@
-import torchvision.transforms.functional as TF
-import torch.nn.functional as F
+from torchvision.transforms import functional as TF
+from torch.nn import functional as F
 import torch
 
 
