@@ -24,7 +24,7 @@ Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Select`.
 Aesthetic&nbsp;Select | Returns `count` best images/latents based on [aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[style](https://huggingface.co/cafeai/cafe_style)/[waifu](https://huggingface.co/cafeai/cafe_waifu)/[age](https://huggingface.co/nateraw/vit-age-classifier) classifiers. If no models are selected then acts like `LatentFromBatch` and returns 1 image/latent with 1-based index. Setting `count` to 0 stops processing for connected nodes.
 
 ## IF Nodes
-A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically but you will have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.
+A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically, but you will have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.
 Name | Description
 :--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes. `Device` can be used to move the models to specific devices, eg `cpu`, `cuda:0`, `cuda:1`. Leaving it empty enables offloading.

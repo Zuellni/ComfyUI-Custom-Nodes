@@ -57,6 +57,7 @@ class Share:
             "required": {
                 "images": ("IMAGE",),
                 "output_dir": ("STRING", {"default": get_output_directory()}),
+                "optimize": ([False, True], {"default": False}),
             },
         }
 
@@ -65,13 +66,13 @@ class Share:
     OUTPUT_NODE = True
     RETURN_TYPES = ()
 
-    def process(self, images, output_dir):
+    def process(self, images, output_dir, optimize):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for image in images:
             image = 255.0 * image.cpu().numpy()
             image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-            image.save(output_dir / f"{uuid4().hex[:16]}.png")
+            image.save(output_dir / f"{uuid4().hex[:16]}.png", optimize=optimize)
 
         return (None,)
