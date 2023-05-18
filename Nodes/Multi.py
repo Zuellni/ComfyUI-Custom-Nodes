@@ -28,7 +28,7 @@ class Crop:
             images = TF.center_crop(images, (height, width))
             images = images.permute(0, 2, 3, 1)
 
-        if latents is not None:
+        if latents:
             latents = latents["samples"]
             latents = TF.center_crop(latents, (height // 8, width // 8))
             latents = {"samples": latents}
@@ -59,7 +59,7 @@ class Repeat:
             if images is not None:
                 images = images.repeat(batch_size, 1, 1, 1)
 
-            if latents is not None:
+            if latents:
                 latents = latents["samples"]
                 latents = latents.repeat(batch_size, 1, 1, 1)
                 latents = {"samples": latents}
@@ -92,7 +92,7 @@ class Noise:
                 noise = torch.randn(images.shape[:3] + (images.shape[3] if color else 1,))
                 images = images + noise * strength
 
-            if latents is not None:
+            if latents:
                 latents = latents["samples"]
                 noise = torch.randn(latents.shape[:1] + (latents.shape[1] if color else 1,) + latents.shape[2:])
                 latents = latents + noise * strength
@@ -127,7 +127,7 @@ class Resize:
                 images = F.interpolate(images, mode=mode, scale_factor=scale)
                 images = images.permute(0, 2, 3, 1)
 
-            if latents is not None:
+            if latents:
                 latents = latents["samples"]
                 latents = F.interpolate(latents, mode=mode, scale_factor=scale)
                 latents = {"samples": latents}

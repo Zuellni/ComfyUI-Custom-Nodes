@@ -54,9 +54,9 @@ class Select:
         return {
             "required": {
                 "count": ("INT", {"default": 1, "min": 0, "max": 64}),
-                "images": ("IMAGE",),
             },
             "optional": {
+                "images": ("IMAGE",),
                 "latents": ("LATENT",),
                 "models": ("AE_MODEL",),
             },
@@ -67,16 +67,19 @@ class Select:
     RETURN_NAMES = ("IMAGES", "LATENTS")
     RETURN_TYPES = ("IMAGE", "LATENT")
 
-    def process(self, count, images, latents=None, models=None):
+    def process(self, count, images=None, latents=None, models=None):
         if not count:
             raise InterruptProcessingException()
 
-        if not models or all(not v["pipe"] for v in models.values()):
+        if not models or images is None or all(not v["pipe"] for v in models.values()):
+            if images is not None:
+                images = images[count - 1].unsqueeze(0)
+
             if latents:
                 latents = latents["samples"]
                 latents = {"samples": latents[count - 1].unsqueeze(0)}
 
-            return (images[count - 1].unsqueeze(0), latents)
+            return (images, latents)
 
         scores = {}
 
