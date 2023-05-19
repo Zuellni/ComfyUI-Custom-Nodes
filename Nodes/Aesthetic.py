@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from comfy.model_management import InterruptProcessingException, get_torch_device
 from PIL import Image
-from torchvision.transforms import functional as TF
 from transformers import pipeline
 
 
