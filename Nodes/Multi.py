@@ -72,7 +72,10 @@ class Noise:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "strength": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01}),
+                "strength": (
+                    "FLOAT",
+                    {"default": 0.1, "min": 0.0, "max": 10.0, "step": 0.01},
+                ),
                 "color": ([False, True], {"default": False}),
             },
             "optional": {
@@ -108,7 +111,10 @@ class Resize:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "scale": ("FLOAT", {"default": 2.0, "min": 0.01, "max": 10.0, "step": 0.01}),
+                "scale": (
+                    "FLOAT",
+                    {"default": 2.0, "min": 0.01, "max": 10.0, "step": 0.01},
+                ),
                 "mode": (
                     ["area", "bicubic", "bilinear", "nearest", "nearest-exact"],
                     {"default": "nearest-exact"},

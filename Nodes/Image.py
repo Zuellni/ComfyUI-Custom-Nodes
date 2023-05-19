@@ -15,7 +15,6 @@ class Batch:
         return {
             "required": {
                 "input_dir": ("STRING", {"default": get_input_directory()}),
-                "file_type": (["gif", "jpg", "png"], {"default": "png"}),
             },
         }
 
@@ -24,26 +23,28 @@ class Batch:
     RETURN_NAMES = ("IMAGES",)
     RETURN_TYPES = ("IMAGE",)
 
-    def process(self, input_dir, file_type):
+    def process(self, input_dir):
         input_dir = Path(input_dir)
+        files = list(input_dir.glob("*.jpg")) + list(input_dir.glob("*.png"))
+
+        if not files:
+            raise InterruptProcessingException()
+
         min_height = float("inf")
         min_width = float("inf")
         images = []
 
-        for image in list(input_dir.glob(f"*.{file_type}")):
-            image = Image.open(image)
+        for file in files:
+            image = Image.open(file)
             image = TF.to_tensor(image)
             image = image[:3, :, :]
             min_height = min(min_height, image.shape[1])
             min_width = min(min_width, image.shape[2])
             images.append(image)
 
-        if not images:
-            raise InterruptProcessingException()
-
         if len(images) > 1:
             min_dim = min(min_height, min_width)
-            images = [TF.resize(v, min_dim) for v in images]
+            images = [TF.resize(v, min_dim, max_size=min_dim + 1) for v in images]
             images = [TF.center_crop(v, (min_height, min_width)) for v in images]
 
         images = torch.stack(images)
