@@ -75,7 +75,7 @@ class Saver:
                 "images": ("IMAGE",),
                 "output_dir": ("STRING", {"default": get_output_directory()}),
                 "optimize": ([False, True], {"default": False}),
-                "save_gif": ([False, True], {"default": False}),
+                "animate": ([False, True], {"default": False}),
                 "fps": ("INT", {"default": 10, "min": 1, "max": 1000}),
             },
         }
@@ -85,7 +85,7 @@ class Saver:
     OUTPUT_NODE = True
     RETURN_TYPES = ()
 
-    def process(self, images, output_dir, optimize, save_gif, fps):
+    def process(self, images, output_dir, optimize, animate, fps):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         frames = []
@@ -94,7 +94,7 @@ class Saver:
             image = 255.0 * image.cpu().numpy()
             image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
 
-            if save_gif:
+            if animate:
                 frames.append(image)
             else:
                 image.save(
@@ -102,13 +102,11 @@ class Saver:
                     optimize=optimize,
                 )
 
-        if save_gif:
-            duration = 1 / fps * 1000
-
+        if animate:
             frames[0].save(
                 output_dir / f"{uuid4().hex[:16]}.gif",
                 append_images=frames[1:],
-                duration=duration,
+                duration=1 / fps * 1000,
                 optimize=optimize,
                 save_all=True,
                 loop=0,
