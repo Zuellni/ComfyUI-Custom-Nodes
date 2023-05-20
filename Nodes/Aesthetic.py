@@ -1,7 +1,6 @@
-import numpy as np
 import torch
 from comfy.model_management import InterruptProcessingException, get_torch_device
-from PIL import Image
+from torchvision.transforms import functional as TF
 from transformers import pipeline
 
 
@@ -85,13 +84,11 @@ class Selector:
 
             return (images, latents)
 
+        pil_images = images.permute(0, 3, 1, 2)
+        pil_images = torch.clamp(pil_images * 255.0, 0, 255)
+        pil_images = pil_images.cpu().to(torch.uint8)
+        pil_images = [TF.to_pil_image(i) for i in pil_images]
         scores = {i: 1.0 for i in range(images.shape[0])}
-        pil_images = []
-
-        for image in images:
-            image = 255.0 * image.cpu().numpy()
-            image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-            pil_images.append(image)
 
         for model in models:
             pipe = model["pipe"]

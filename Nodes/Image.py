@@ -1,7 +1,6 @@
 from pathlib import Path
 from uuid import uuid4
 
-import numpy as np
 import torch
 from comfy.model_management import InterruptProcessingException
 from folder_paths import get_input_directory, get_output_directory
@@ -88,28 +87,25 @@ class Saver:
     def process(self, images, output_dir, optimize, animate, fps):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        frames = []
-
-        for image in images:
-            image = 255.0 * image.cpu().numpy()
-            image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
-
-            if animate:
-                frames.append(image)
-            else:
-                image.save(
-                    output_dir / f"{uuid4().hex[:16]}.png",
-                    optimize=optimize,
-                )
+        images = images.permute(0, 3, 1, 2)
+        images = torch.clamp(images * 255.0, 0, 255)
+        images = images.cpu().to(torch.uint8)
+        images = [TF.to_pil_image(i) for i in images]
 
         if animate:
-            frames[0].save(
+            images[0].save(
                 output_dir / f"{uuid4().hex[:16]}.gif",
-                append_images=frames[1:],
+                append_images=images[1:],
                 duration=1 / fps * 1000,
                 optimize=optimize,
                 save_all=True,
                 loop=0,
             )
+        else:
+            for image in images:
+                image.save(
+                    output_dir / f"{uuid4().hex[:16]}.png",
+                    optimize=optimize,
+                )
 
         return (None,)
