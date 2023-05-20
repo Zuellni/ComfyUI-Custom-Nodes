@@ -78,7 +78,7 @@ class Loader:
         return (model,)
 
 
-class Encode:
+class Encoder:
     @classmethod
     def INPUT_TYPES(s):
         return {

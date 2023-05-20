@@ -1,4 +1,4 @@
-class Decode:
+class Decoder:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -19,7 +19,7 @@ class Decode:
         return (vae.decode_tiled(latents) if tile else vae.decode(latents),)
 
 
-class Encode:
+class Encoder:
     @classmethod
     def INPUT_TYPES(s):
         return {

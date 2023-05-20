@@ -5,11 +5,11 @@ import numpy as np
 import torch
 from comfy.model_management import InterruptProcessingException
 from folder_paths import get_input_directory, get_output_directory
-from PIL import Image
+from PIL import Image, ImageSequence
 from torchvision.transforms import functional as TF
 
 
-class Batch:
+class Loader:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -25,18 +25,32 @@ class Batch:
 
     def process(self, input_dir):
         input_dir = Path(input_dir)
-        files = list(input_dir.glob("*.jpg")) + list(input_dir.glob("*.png"))
+        files = []
+
+        for file in ["gif", "jpeg", "jpg", "png"]:
+            files.extend(input_dir.glob(f"*.{file}"))
 
         if not files:
             raise InterruptProcessingException()
+
+        pil_images = []
+
+        for file in files:
+            image = Image.open(file)
+
+            if getattr(image, "is_animated", True):
+                for frame in ImageSequence.Iterator(image):
+                    pil_images.append(frame.copy().convert("RGBA"))
+            else:
+                pil_images.append(image.convert("RGBA"))
 
         min_height = float("inf")
         min_width = float("inf")
         images = []
 
-        for file in files:
-            image = Image.open(file)
+        for image in pil_images:
             image = TF.to_tensor(image)
+            image[:3, image[3, :, :] == 0] = 0
             image = image[:3, :, :]
             min_height = min(min_height, image.shape[1])
             min_width = min(min_width, image.shape[2])
@@ -44,15 +58,23 @@ class Batch:
 
         if len(images) > 1:
             min_dim = min(min_height, min_width)
-            images = [TF.resize(v, min_dim) for v in images]
-            images = [TF.center_crop(v, (min_height, min_width)) for v in images]
+            cropped_images = []
+
+            for image in images:
+                image = TF.resize(image, min_dim)
+                min_height = min(min_height, image.shape[1])
+                min_width = min(min_width, image.shape[2])
+                image = TF.center_crop(image, (min_height, min_width))
+                cropped_images.append(image)
+
+            images = cropped_images
 
         images = torch.stack(images)
         images = images.permute(0, 2, 3, 1)
         return (images,)
 
 
-class Share:
+class Saver:
     @classmethod
     def INPUT_TYPES(s):
         return {

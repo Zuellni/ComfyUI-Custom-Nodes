@@ -20,38 +20,38 @@ class Loader:
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
     RETURN_NAMES = ("MODELS",)
-    RETURN_TYPES = ("PIPES",)
+    RETURN_TYPES = ("MODELS",)
 
     def process(self, aesthetic, style, waifu, age):
         def pipe(model):
             return pipeline(model=model, device=get_torch_device())
 
-        pipes = []
+        models = []
 
-        pipes.append({
+        models.append({
             "pipe": pipe("cafeai/cafe_aesthetic"),
             "weights": [0.0, 1.0],
         }) if aesthetic else None
 
-        pipes.append({
+        models.append({
             "pipe": pipe("cafeai/cafe_style"),
             "weights": [1.0, 0.75, 0.5, 0.0, 0.0],
         }) if style else None
 
-        pipes.append({
+        models.append({
             "pipe": pipe("cafeai/cafe_waifu"),
             "weights": [0.0, 1.0],
         }) if waifu else None
 
-        pipes.append({
+        models.append({
             "pipe": pipe("nateraw/vit-age-classifier"),
             "weights": [0.25, 0.5, 1.0, 0.75, 0.5, 0.0, 0.0, 0.0, 0.0],
         }) if age else None
 
-        return (pipes,)
+        return (models,)
 
 
-class Select:
+class Selector:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -61,7 +61,7 @@ class Select:
             "optional": {
                 "images": ("IMAGE",),
                 "latents": ("LATENT",),
-                "models": ("PIPES",),
+                "models": ("MODELS",),
             },
         }
 
@@ -71,7 +71,7 @@ class Select:
     RETURN_TYPES = ("IMAGE", "LATENT")
 
     def process(self, count, images=None, latents=None, models=None):
-        if not count:
+        if not count or (images is None and not models):
             raise InterruptProcessingException()
 
         if images is None or not models:
