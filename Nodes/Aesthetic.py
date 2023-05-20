@@ -97,6 +97,7 @@ class Selector:
             pipe = model["pipe"]
             weights = model["weights"]
             labels = pipe.model.config.id2label
+
             w_len = len(weights)
             w_sum = sum(weights)
             w_map = {labels[i]: weights[i] for i in range(w_len)}

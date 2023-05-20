@@ -1,3 +1,6 @@
+from torchvision.transforms import functional as TF
+
+
 class Decoder:
     @classmethod
     def INPUT_TYPES(s):
@@ -37,7 +40,10 @@ class Encoder:
     RETURN_TYPES = ("LATENT",)
 
     def process(self, images, vae, tile, batch_size):
-        images = images[:, :, :, :3]
+        images = images.permute(0, 3, 1, 2)
+        height, width = images.shape[2:]
+        images = TF.center_crop(images, (height // 8 * 8, width // 8 * 8))
+        images = images.permute(0, 2, 3, 1)
 
         if batch_size > 1:
             images = images.repeat(batch_size, 1, 1, 1)

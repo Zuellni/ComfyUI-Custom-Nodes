@@ -64,7 +64,7 @@ if config["Settings"]["Install Requirements"] or first_run:
 
 if config["Settings"]["Suppress Warnings"]:
     import logging
-    from warnings import filterwarnings
+    from warnings import filterwarnings as filter
 
     from diffusers import logging as diffusers_logging
     from transformers import logging as transformers_logging
@@ -72,10 +72,10 @@ if config["Settings"]["Suppress Warnings"]:
     transformers_logging.set_verbosity_error()
     diffusers_logging.set_verbosity_error()
 
-    filterwarnings("ignore", "TypedStorage is deprecated", UserWarning)
-    filterwarnings("ignore", "The default value of the antialias parameter", UserWarning)
-    filterwarnings("ignore", "You seem to be using the pipelines sequentially", UserWarning)
-    filterwarnings("ignore", "The `reduce_labels` parameter is deprecated", FutureWarning)
+    filter("ignore", "TypedStorage is deprecated", UserWarning)
+    filter("ignore", "The default value of the antialias parameter", UserWarning)
+    filter("ignore", "You seem to be using the pipelines sequentially", UserWarning)
+    filter("ignore", "The `reduce_labels` parameter is deprecated", FutureWarning)
 
     logger = logging.getLogger("xformers")
     logger.addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
