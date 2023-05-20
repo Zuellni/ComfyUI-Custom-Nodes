@@ -33,14 +33,22 @@ IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns ima
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them x4.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
 
-## Other Nodes
+## Image Nodes
 Name | Description
 :--- | :---
 Image&nbsp;Loader | Loads all images in a specified directory. The images will be cropped/resized if their dimensions aren't equal.
 Image&nbsp;Saver | Saves images without metadata in a specified directory. Useful for sharing images without having to remove prompts manually.
+
+## Latent Nodes
+Name | Description
+:--- | :---
 Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `batch_size` times without having to create multiple sampler nodes.
+
+## Multi Nodes
+Name | Description
+:--- | :---
 Multi&nbsp;Crop | Center crops/pads images/latents to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to images/latents.
-Multi&nbsp;Repeat | Allows for repeating images/latents `batch_size` times, similar to `Latent Encode`.
+Multi&nbsp;Repeat | Allows for repeating images/latents `batch_size` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to upscale images/latents.
