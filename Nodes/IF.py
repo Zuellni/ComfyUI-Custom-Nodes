@@ -39,7 +39,7 @@ class Loader:
             "watermarker": None,
         }
 
-        if model.startswith("T5"):
+        if model in ["T5-FP8", "T5-FP16"]:
             load_in_8bit = model == "T5-FP8"
 
             text_encoder = T5EncoderModel.from_pretrained(
@@ -110,8 +110,8 @@ class Stage_I:
                 "model": ("IF_MODEL",),
                 "positive": ("POSITIVE",),
                 "negative": ("NEGATIVE",),
-                "width": ("INT", {"default": 64, "min": 16, "max": 128, "step": 16}),
-                "height": ("INT", {"default": 64, "min": 16, "max": 128, "step": 16}),
+                "width": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
+                "height": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -186,8 +186,8 @@ class Stage_II:
             image=images,
             prompt_embeds=positive,
             negative_prompt_embeds=negative,
-            height=images.shape[2] * 4,
-            width=images.shape[3] * 4,
+            height=images.shape[2] // 8 * 8 * 4,
+            width=images.shape[3] // 8 * 8 * 4,
             generator=torch.manual_seed(seed),
             guidance_scale=cfg,
             num_inference_steps=steps,
