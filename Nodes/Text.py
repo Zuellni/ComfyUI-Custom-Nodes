@@ -58,7 +58,7 @@ class Gen:
             "top_p": top_p,
             "stop_at_newline": True,
             "chat_prompt_size": 2048,
-            "instruction_template": "Vicuna-v1.1",
+            "instruction_template": "WizardLM",
             "mode": "chat",
             "history": {
                 "internal": [],
