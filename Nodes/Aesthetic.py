@@ -18,7 +18,7 @@ class Loader:
 
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
-    RETURN_NAMES = ("MODELS",)
+    RETURN_NAMES = ("AE_MODEL",)
     RETURN_TYPES = ("MODELS",)
 
     def process(self, aesthetic, style, waifu, age):
@@ -68,7 +68,7 @@ class Selector:
             "optional": {
                 "images": ("IMAGE",),
                 "latents": ("LATENT",),
-                "models": ("MODELS",),
+                "models": ("AE_MODEL",),
             },
         }
 
@@ -112,7 +112,7 @@ class Selector:
                 score = [v["score"] * w_map[v["label"]] / w_sum for v in value]
                 scores[index] *= sum(score)
 
-        scores_str = "".join((f"\n{k + 1}: {v:.3f}" for k, v in scores.items()))
+        scores_str = "\n".join((f"{k + 1}: {v:.3f}" for k, v in scores.items()))
         scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)
         images = [images[v[0]] for v in scores[:count]]
         images = torch.stack(images)
