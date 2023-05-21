@@ -66,7 +66,6 @@ if config["Settings"]["Install Requirements"] or first_run:
 if config["Settings"]["Suppress Warnings"]:
     import logging
     from warnings import filterwarnings as filter
-
     from diffusers import logging as diffusers_logging
     from transformers import logging as transformers_logging
 

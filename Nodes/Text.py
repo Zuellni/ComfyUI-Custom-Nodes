@@ -1,15 +1,13 @@
 import json
-
 import requests
 
 
-class Generator:
+class Gen:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "system": ("STRING", {"default": "", "multiline": True}),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "string": ("STRING", {"default": "", "multiline": True}),
                 "character": ("STRING", {"default": "Example"}),
                 "api": ("STRING", {"default": "http://localhost:5000/api/v1/chat"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
@@ -33,13 +31,11 @@ class Generator:
 
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
-    RETURN_NAMES = ("TEXT",)
     RETURN_TYPES = ("STRING",)
 
     def process(
         self,
-        system,
-        prompt,
+        string,
         character,
         api,
         seed,
@@ -51,7 +47,7 @@ class Generator:
         top_p,
     ):
         request = {
-            "user_input": "\n".join([s for s in [system, prompt] if s]),
+            "user_input": string,
             "character": character,
             "seed": seed,
             "min_length": min_tokens,
@@ -72,5 +68,44 @@ class Generator:
 
         response = requests.post(api, json=request)
         result = response.json()["results"][0]["history"]["visible"][-1][1]
-        print(f"[\033[94mZuellni\033[0m]: {result}")
         return (result,)
+
+
+class Join:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "separator": ("STRING", {"default": "", "multiline": True}),
+                "string_1": ("STRING", {"default": "", "multiline": True}),
+                "string_2": ("STRING", {"default": "", "multiline": True}),
+            }
+        }
+
+    CATEGORY = "Zuellni/Text"
+    FUNCTION = "process"
+    RETURN_TYPES = ("STRING",)
+
+    def process(self, separator, string_1, string_2):
+        return (separator.join((string_1, string_2)),)
+
+
+class Print:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "prefix": ("STRING", {"default": "Zuellni"}),
+                "string": ("STRING", {"default": ""}),
+            }
+        }
+
+    CATEGORY = "Zuellni/Text"
+    FUNCTION = "process"
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+
+    def process(self, prefix, string):
+        prefix = f"[\033[94m{prefix}\033[0m]: " if prefix else ""
+        print(prefix + string)
+        return (None,)

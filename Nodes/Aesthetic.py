@@ -74,8 +74,8 @@ class Selector:
 
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
-    RETURN_NAMES = ("IMAGES", "LATENTS")
-    RETURN_TYPES = ("IMAGE", "LATENT")
+    RETURN_NAMES = ("IMAGES", "LATENTS", "SCORES")
+    RETURN_TYPES = ("IMAGE", "LATENT", "STRING")
 
     def process(self, count, images=None, latents=None, models=None):
         if not count or (images is None and not models):
@@ -90,7 +90,7 @@ class Selector:
                 latents = latents[count - 1].unsqueeze(0)
                 latents = {"samples": latents}
 
-            return (images, latents)
+            return (images, latents, "")
 
         pil_images = images.permute(0, 3, 1, 2)
         pil_images = torch.clamp(pil_images * 255.0, 0, 255)
@@ -112,6 +112,7 @@ class Selector:
                 score = [v["score"] * w_map[v["label"]] / w_sum for v in value]
                 scores[index] *= sum(score)
 
+        scores_str = "".join((f"\n{k + 1}: {v:.3f}" for k, v in scores.items()))
         scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)
         images = [images[v[0]] for v in scores[:count]]
         images = torch.stack(images)
@@ -122,4 +123,4 @@ class Selector:
             latents = torch.stack(latents)
             latents = {"samples": latents}
 
-        return (images, latents)
+        return (images, latents, scores_str)
