@@ -27,25 +27,33 @@ class Loader:
 
         models = []
 
-        aesthetic and models.append({
-            "pipe": pipe("cafeai/cafe_aesthetic"),
-            "weights": [0.0, 1.0],
-        })
+        aesthetic and models.append(
+            {
+                "pipe": pipe("cafeai/cafe_aesthetic"),
+                "weights": [0.0, 1.0],
+            }
+        )
 
-        style and models.append({
-            "pipe": pipe("cafeai/cafe_style"),
-            "weights": [1.0, 0.75, 0.5, 0.0, 0.0],
-        })
+        style and models.append(
+            {
+                "pipe": pipe("cafeai/cafe_style"),
+                "weights": [1.0, 0.75, 0.5, 0.0, 0.0],
+            }
+        )
 
-        waifu and models.append({
-            "pipe": pipe("cafeai/cafe_waifu"),
-            "weights": [0.0, 1.0],
-        })
+        waifu and models.append(
+            {
+                "pipe": pipe("cafeai/cafe_waifu"),
+                "weights": [0.0, 1.0],
+            }
+        )
 
-        age and models.append({
-            "pipe": pipe("nateraw/vit-age-classifier"),
-            "weights": [0.25, 0.5, 1.0, 0.75, 0.5, 0.0, 0.0, 0.0, 0.0],
-        })
+        age and models.append(
+            {
+                "pipe": pipe("nateraw/vit-age-classifier"),
+                "weights": [0.25, 0.5, 1.0, 0.75, 0.5, 0.0, 0.0, 0.0, 0.0],
+            }
+        )
 
         return (models,)
 

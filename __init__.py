@@ -20,6 +20,7 @@ config = {
         "Image": True,
         "Latent": True,
         "Multi": True,
+        "Text": True,
     },
 }
 
@@ -60,7 +61,7 @@ if config["Settings"]["Update Repository"]:
 
 if config["Settings"]["Install Requirements"] or first_run:
     print("[\033[94mZuellni\033[0m]: Installing requirements...")
-    subprocess.run(f"pip install {quiet} --upgrade-strategy only-if-needed -r {req_path}")
+    subprocess.run(f"pip install {quiet} -U -r {req_path}")
 
 if config["Settings"]["Suppress Warnings"]:
     import logging
@@ -77,8 +78,8 @@ if config["Settings"]["Suppress Warnings"]:
     filter("ignore", "You seem to be using the pipelines sequentially", UserWarning)
     filter("ignore", "The `reduce_labels` parameter is deprecated", FutureWarning)
 
-    logger = logging.getLogger("xformers")
-    logger.addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
+    log = logging.getLogger("xformers")
+    log.addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
 
 for key, value in config["Load Nodes"].items():
     if value:

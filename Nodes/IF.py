@@ -14,7 +14,17 @@ class Loader:
         return {
             "required": {
                 "model": (
-                    ["NONE", "T5-FP8", "T5-FP16", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"],
+                    [
+                        "NONE",
+                        "T5-FP8",
+                        "T5-FP16",
+                        "I-M",
+                        "I-L",
+                        "I-XL",
+                        "II-M",
+                        "II-L",
+                        "III",
+                    ],
                     {"default": "NONE"},
                 ),
                 "device": ("STRING", {"default": ""}),
@@ -124,7 +134,9 @@ class Stage_I:
     RETURN_NAMES = ("IMAGES",)
     RETURN_TYPES = ("IMAGE",)
 
-    def process(self, model, positive, negative, width, height, batch_size, seed, steps, cfg):
+    def process(
+        self, model, positive, negative, width, height, batch_size, seed, steps, cfg
+    ):
         progress = ProgressBar(steps)
 
         def callback(step, time_step, latent):
@@ -207,7 +219,10 @@ class Stage_III:
                 "model": ("IF_MODEL",),
                 "images": ("IMAGE",),
                 "tile": ([False, True], {"default": False}),
-                "tile_size": ("INT", {"default": 512, "min": 64, "max": 1024, "step": 64}),
+                "tile_size": (
+                    "INT",
+                    {"default": 512, "min": 64, "max": 1024, "step": 64},
+                ),
                 "noise": ("INT", {"default": 20, "min": 0, "max": 100}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -222,7 +237,19 @@ class Stage_III:
     RETURN_NAMES = ("IMAGES",)
     RETURN_TYPES = ("IMAGE",)
 
-    def process(self, model, images, tile, tile_size, noise, seed, steps, cfg, positive, negative):
+    def process(
+        self,
+        model,
+        images,
+        tile,
+        tile_size,
+        noise,
+        seed,
+        steps,
+        cfg,
+        positive,
+        negative,
+    ):
         images = images.permute(0, 3, 1, 2)
         progress = ProgressBar(steps)
         batch_size = images.shape[0]
