@@ -60,7 +60,6 @@ class Gen:
             "top_k": top_k,
             "top_p": top_p,
             "stop_at_newline": True,
-            "chat_prompt_size": 2048,
             "mode": "chat",
             "history": {
                 "internal": [],
@@ -81,8 +80,6 @@ class Join:
             "required": {
                 "string_1": ("STRING", {"default": ""}),
                 "string_2": ("STRING", {"default": ""}),
-            },
-            "optional": {
                 "string_3": ("STRING", {"default": ""}),
                 "string_4": ("STRING", {"default": ""}),
                 "string_5": ("STRING", {"default": ""}),
@@ -93,8 +90,8 @@ class Join:
     FUNCTION = "process"
     RETURN_TYPES = ("STRING",)
 
-    def process(self, string_1, string_2, string_3, string_4, string_5):
-        return ((string_1 + string_2 + string_3 + string_4 + string_5),)
+    def process(self, **strings):
+        return ("".join(strings.values()),)
 
 
 class Print:

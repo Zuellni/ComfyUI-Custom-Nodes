@@ -36,7 +36,7 @@ IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffu
 Name | Description
 :--- | :---
 Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
-Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as an animated gif as well.
+Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif.
 Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `batch_size` times without having to create multiple sampler nodes.
 Multi&nbsp;Crop | Center crops/pads images/latents to specified dimensions.
