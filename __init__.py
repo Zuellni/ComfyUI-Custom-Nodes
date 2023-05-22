@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -28,7 +29,6 @@ path = Path(__file__)
 git_path = path.parent
 config_path = path.with_name("config.json")
 req_path = path.with_name("requirements.txt")
-quiet = "-q" if config["Settings"]["Quiet Update"] else ""
 first_run = False
 
 if config_path.is_file():
@@ -54,6 +54,8 @@ try:
         json.dump(config, f, indent="\t", separators=(",", ": "))
 except:
     print("[\033[94mZuellni\033[0m]: Couldn't save config. Proceeding...")
+
+quiet = "-q" if config["Settings"]["Quiet Update"] else ""
 
 if config["Settings"]["Update Repository"]:
     print("[\033[94mZuellni\033[0m]: Updating repository...")

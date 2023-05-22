@@ -9,6 +9,7 @@ class Gen:
             "required": {
                 "string": ("STRING", {"default": "", "multiline": True}),
                 "character": ("STRING", {"default": "Example"}),
+                "template": ("STRING", {"default": "WizardLM"}),
                 "api": ("STRING", {"default": "http://localhost:5000/api/v1/chat"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
                 "min_tokens": ("INT", {"default": 32, "min": 1, "max": 2048}),
@@ -37,6 +38,7 @@ class Gen:
         self,
         string,
         character,
+        template,
         api,
         seed,
         min_tokens,
@@ -49,6 +51,7 @@ class Gen:
         request = {
             "user_input": string,
             "character": character,
+            "instruction_template": template,
             "seed": seed,
             "min_length": min_tokens,
             "max_new_tokens": max_tokens,
@@ -58,7 +61,6 @@ class Gen:
             "top_p": top_p,
             "stop_at_newline": True,
             "chat_prompt_size": 2048,
-            "instruction_template": "WizardLM",
             "mode": "chat",
             "history": {
                 "internal": [],
@@ -76,8 +78,8 @@ class Join:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "separator": ("STRING", {"default": "", "multiline": True}),
                 "string_1": ("STRING", {"default": "", "multiline": True}),
+                "separator": ("STRING", {"default": "", "multiline": True}),
                 "string_2": ("STRING", {"default": "", "multiline": True}),
             }
         }
@@ -86,7 +88,7 @@ class Join:
     FUNCTION = "process"
     RETURN_TYPES = ("STRING",)
 
-    def process(self, separator, string_1, string_2):
+    def process(self, string_1, separator, string_2):
         return (separator.join((string_1, string_2)),)
 
 

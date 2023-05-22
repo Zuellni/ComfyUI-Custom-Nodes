@@ -6,13 +6,12 @@ Clone the repository to `custom_nodes` in your ComfyUI directory:
 git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
 ```
 
-A `config.json` file will be created on first run in the extension's directory.  
-Requirements should be installed automatically but if that doesn't happen you can install them with:
+A `config.json` file will be created on first run in the extension's directory. Requirements should be installed automatically but if that doesn't happen you can install them with:
 ```
 pip install -r custom_nodes\Zuellni\requirements.txt
 ```
 
-To update set `Update Repository` to `true` in `config.json` or execute:
+To update set `Update Repository` to `true` in `config.json` or run:
 ```
 git -C custom_nodes\Zuellni pull
 ```
@@ -33,21 +32,13 @@ IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns ima
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them x4.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
 
-## Image Nodes
+## Other Nodes
 Name | Description
 :--- | :---
 Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
 Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as an animated gif as well.
-
-## Latent Nodes
-Name | Description
-:--- | :---
 Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
 Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `batch_size` times without having to create multiple sampler nodes.
-
-## Multi Nodes
-Name | Description
-:--- | :---
 Multi&nbsp;Crop | Center crops/pads images/latents to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `batch_size` times, similar to `Latent Encoder`.
