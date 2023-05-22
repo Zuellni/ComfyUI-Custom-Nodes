@@ -14,13 +14,13 @@ class Loader:
                 "max_tokens": ("INT", {"default": 64, "min": 1, "max": 2048}),
                 "penalty": (
                     "FLOAT",
-                    {"default": 1.15, "min": 1.0, "max": 1.5},
+                    {"default": 1.15, "min": 1.0, "max": 2.0, "step": 0.01},
                 ),
                 "temperature": (
                     "FLOAT",
-                    {"default": 2.0, "min": 0.0, "max": 2.0, "step": 0.01},
+                    {"default": 2.0, "min": 0.0, "max": 10.0, "step": 0.01},
                 ),
-                "top_k": ("INT", {"default": 30, "min": 0, "max": 200}),
+                "top_k": ("INT", {"default": 30, "min": 0, "max": 1000}),
                 "top_p": (
                     "FLOAT",
                     {"default": 0.18, "min": 0.0, "max": 1.0, "step": 0.01},
@@ -57,7 +57,6 @@ class Loader:
                     "temperature": temperature,
                     "top_k": top_k,
                     "top_p": top_p,
-                    "stop_at_newline": True,
                     "mode": "chat",
                     "history": {
                         "internal": [],
