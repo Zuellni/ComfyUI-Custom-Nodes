@@ -86,8 +86,7 @@ class Prompt:
         params["request"]["user_input"] = text
         params["request"]["seed"] = seed
         response = requests.post(params["api"], json=params["request"])
-        result = response.json()["results"][0]["history"]["visible"][-1][1]
-        return (result,)
+        return (response.json()["results"][0]["history"]["visible"][-1][1],)
 
 
 class Join:

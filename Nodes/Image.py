@@ -110,7 +110,7 @@ class Saver:
                 output(format),
                 append_images=pil_images[1:],
                 disposal=2,
-                duration=1 / (fps if fps else 1) * 1000,
+                duration=1 / fps * 1000 if fps else 0,
                 loop=0,
                 optimize=optimize,
                 save_all=True,
