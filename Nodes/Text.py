@@ -2,16 +2,14 @@ import json
 import requests
 
 
-class Gen:
+class Loader:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "string": ("STRING", {"default": "", "multiline": True}),
                 "character": ("STRING", {"default": "Example"}),
                 "template": ("STRING", {"default": "WizardLM"}),
                 "api": ("STRING", {"default": "http://localhost:5000/api/v1/chat"}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
                 "min_tokens": ("INT", {"default": 32, "min": 1, "max": 2048}),
                 "max_tokens": ("INT", {"default": 64, "min": 1, "max": 2048}),
                 "penalty": (
@@ -32,15 +30,14 @@ class Gen:
 
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
-    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("PARAMS",)
+    RETURN_TYPES = ("DICT",)
 
     def process(
         self,
-        string,
         character,
         template,
         api,
-        seed,
         min_tokens,
         max_tokens,
         penalty,
@@ -48,41 +45,37 @@ class Gen:
         top_k,
         top_p,
     ):
-        request = {
-            "user_input": string,
-            "character": character,
-            "instruction_template": template,
-            "seed": seed,
-            "min_length": min_tokens,
-            "max_new_tokens": max_tokens,
-            "repetition_penalty": penalty,
-            "temperature": temperature,
-            "top_k": top_k,
-            "top_p": top_p,
-            "stop_at_newline": True,
-            "mode": "chat",
-            "history": {
-                "internal": [],
-                "visible": [],
+        return (
+            {
+                "api": api,
+                "request": {
+                    "character": character,
+                    "instruction_template": template,
+                    "min_length": min_tokens,
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": penalty,
+                    "temperature": temperature,
+                    "top_k": top_k,
+                    "top_p": top_p,
+                    "stop_at_newline": True,
+                    "mode": "chat",
+                    "history": {
+                        "internal": [],
+                        "visible": [],
+                    },
+                },
             },
-        }
-
-        response = requests.post(api, json=request)
-        result = response.json()["results"][0]["history"]["visible"][-1][1]
-        return (result,)
+        )
 
 
-class Join:
+class Prompt:
     @classmethod
     def INPUT_TYPES(s):
-        test = "test"
         return {
             "required": {
-                "string_1": ("STRING", {"default": ""}),
-                "string_2": ("STRING", {"default": ""}),
-                "string_3": ("STRING", {"default": ""}),
-                "string_4": ("STRING", {"default": ""}),
-                "string_5": ("STRING", {"default": ""}),
+                "text": ("STRING", {"default": "", "multiline": True}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
+                "params": ("DICT",),
             },
         }
 
@@ -90,8 +83,33 @@ class Join:
     FUNCTION = "process"
     RETURN_TYPES = ("STRING",)
 
-    def process(self, **strings):
-        return ("".join(strings.values()),)
+    def process(self, text, seed, params):
+        params["request"]["user_input"] = text
+        params["request"]["seed"] = seed
+        response = requests.post(params["api"], json=params["request"])
+        result = response.json()["results"][0]["history"]["visible"][-1][1]
+        return (result,)
+
+
+class Join:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "text_1": ("STRING", {"default": ""}),
+                "text_2": ("STRING", {"default": ""}),
+                "text_3": ("STRING", {"default": ""}),
+                "text_4": ("STRING", {"default": ""}),
+                "text_5": ("STRING", {"default": ""}),
+            },
+        }
+
+    CATEGORY = "Zuellni/Text"
+    FUNCTION = "process"
+    RETURN_TYPES = ("STRING",)
+
+    def process(self, **texts):
+        return ("".join(texts.values()),)
 
 
 class Print:
@@ -100,7 +118,7 @@ class Print:
         return {
             "required": {
                 "prefix": ("STRING", {"default": "Zuellni"}),
-                "string": ("STRING", {"default": ""}),
+                "text": ("STRING", {"default": ""}),
             }
         }
 
@@ -109,7 +127,7 @@ class Print:
     OUTPUT_NODE = True
     RETURN_TYPES = ()
 
-    def process(self, prefix, string):
+    def process(self, prefix, text):
         prefix = f"[\033[94m{prefix}\033[0m]: " if prefix else ""
-        print(prefix + string)
+        print(prefix + text)
         return (None,)

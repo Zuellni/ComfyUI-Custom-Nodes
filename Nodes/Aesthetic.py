@@ -18,8 +18,8 @@ class Loader:
 
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
-    RETURN_NAMES = ("AE_MODEL",)
-    RETURN_TYPES = ("MODELS",)
+    RETURN_NAMES = ("MODELS",)
+    RETURN_TYPES = ("LIST",)
 
     def process(self, aesthetic, style, waifu, age):
         def pipe(model):
@@ -68,7 +68,7 @@ class Selector:
             "optional": {
                 "images": ("IMAGE",),
                 "latents": ("LATENT",),
-                "models": ("AE_MODEL",),
+                "models": ("LIST",),
             },
         }
 
