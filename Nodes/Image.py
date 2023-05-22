@@ -19,8 +19,8 @@ class Loader:
 
     CATEGORY = "Zuellni/Image"
     FUNCTION = "process"
-    RETURN_NAMES = ("IMAGES",)
-    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("IMAGES", "MASKS")
+    RETURN_TYPES = ("IMAGE", "MASK")
 
     def process(self, input_dir):
         input_dir = Path(input_dir)
@@ -48,7 +48,6 @@ class Loader:
         for image in pil_images:
             image = TF.to_tensor(image)
             image[:3, image[3, :, :] == 0] = 0
-            image = image[:3, :, :]
             images.append(image)
 
         if len(images) > 1:
@@ -63,7 +62,9 @@ class Loader:
 
         images = torch.stack(images)
         images = images.permute(0, 2, 3, 1)
-        return (images,)
+        masks = images[:, :, :, 3]
+        images = images[:, :, :, :3]
+        return (images, masks)
 
 
 class Saver:
@@ -77,6 +78,9 @@ class Saver:
                 "animate": ([False, True], {"default": False}),
                 "fps": ("INT", {"default": 10, "min": 1, "max": 1000}),
             },
+            "optional": {
+                "masks": ("MASK",),
+            },
         }
 
     CATEGORY = "Zuellni/Image"
@@ -84,9 +88,14 @@ class Saver:
     OUTPUT_NODE = True
     RETURN_TYPES = ()
 
-    def process(self, images, output_dir, optimize, animate, fps):
+    def process(self, images, output_dir, optimize, animate, fps, masks=None):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
+
+        if masks is not None:
+            masks = masks.unsqueeze(-1)
+            images = torch.cat((images, masks), dim=-1)
+
         images = images.permute(0, 3, 1, 2)
         images = torch.clamp(images * 255.0, 0, 255)
         images = images.cpu().to(torch.uint8)

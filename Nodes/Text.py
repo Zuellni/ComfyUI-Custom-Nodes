@@ -76,20 +76,25 @@ class Gen:
 class Join:
     @classmethod
     def INPUT_TYPES(s):
+        test = "test"
         return {
             "required": {
-                "string_1": ("STRING", {"default": "", "multiline": True}),
-                "separator": ("STRING", {"default": "", "multiline": True}),
-                "string_2": ("STRING", {"default": "", "multiline": True}),
-            }
+                "string_1": ("STRING", {"default": ""}),
+                "string_2": ("STRING", {"default": ""}),
+            },
+            "optional": {
+                "string_3": ("STRING", {"default": ""}),
+                "string_4": ("STRING", {"default": ""}),
+                "string_5": ("STRING", {"default": ""}),
+            },
         }
 
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
     RETURN_TYPES = ("STRING",)
 
-    def process(self, string_1, separator, string_2):
-        return (separator.join((string_1, string_2)),)
+    def process(self, string_1, string_2, string_3, string_4, string_5):
+        return ((string_1 + string_2 + string_3 + string_4 + string_5),)
 
 
 class Print:

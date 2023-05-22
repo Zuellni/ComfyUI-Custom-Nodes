@@ -112,7 +112,7 @@ class Selector:
                 score = [v["score"] * w_map[v["label"]] / w_sum for v in value]
                 scores[index] *= sum(score)
 
-        scores_str = "\n".join((f"{k + 1}: {v:.3f}" for k, v in scores.items()))
+        scores_str = ", ".join((f"{v:.3f}" for v in scores.values()))
         scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)
         images = [images[v[0]] for v in scores[:count]]
         images = torch.stack(images)
