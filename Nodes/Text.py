@@ -92,24 +92,26 @@ class Prompt:
 class Format:
     @classmethod
     def INPUT_TYPES(cls):
-        vars = {f"var_{i + 1}": ("STRING", {"default": ""}) for i in range(cls.COUNT)}
+        vars = {
+            f"var_{i + 1}": ("STRING", {"default": ""}) for i in range(cls.VAR_COUNT)
+        }
 
         return {
             "required": {
                 "text": ("STRING", {"default": "", "multiline": True}),
-                "count": ("INT", {"default": cls.COUNT, "min": 1, "max": 9}),
+                "var_count": ("INT", {"default": cls.VAR_COUNT, "min": 1, "max": 9}),
             },
             "optional": vars,
         }
 
-    COUNT = 1
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
     OUTPUT_NODE = True
     RETURN_TYPES = ("STRING",)
+    VAR_COUNT = 1
 
-    def process(self, text, count, **vars):
-        __class__.COUNT = count
+    def process(self, text, var_count, **vars):
+        __class__.VAR_COUNT = var_count
 
         for key, value in vars.items():
             text = text.replace(key, value)
@@ -122,7 +124,7 @@ class Print:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "prefix": ("STRING", {"default": "Zuellni"}),
+                "prefix": ("STRING", {"default": ""}),
                 "text": ("STRING", {"default": ""}),
             }
         }

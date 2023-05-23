@@ -58,7 +58,7 @@ class Loader:
         return (models,)
 
 
-class Selector:
+class Select:
     @classmethod
     def INPUT_TYPES(cls):
         return {
