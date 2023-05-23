@@ -5,7 +5,7 @@ from torchvision.transforms import functional as TF
 
 class Crop:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "width": ("INT", {"default": 512, "min": 8, "max": 8192}),
@@ -38,7 +38,7 @@ class Crop:
 
 class Repeat:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
@@ -69,7 +69,7 @@ class Repeat:
 
 class Noise:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "strength": (
@@ -108,7 +108,7 @@ class Noise:
 
 class Resize:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "scale": (

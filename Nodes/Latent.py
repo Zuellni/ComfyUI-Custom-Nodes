@@ -3,7 +3,7 @@ from torchvision.transforms import functional as TF
 
 class Decoder:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "latents": ("LATENT",),
@@ -24,7 +24,7 @@ class Decoder:
 
 class Encoder:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "images": ("IMAGE",),

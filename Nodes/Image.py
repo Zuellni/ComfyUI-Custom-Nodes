@@ -11,7 +11,7 @@ from torchvision.utils import make_grid
 
 class Loader:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "input_dir": ("STRING", {"default": get_input_directory()}),
@@ -70,7 +70,7 @@ class Loader:
 
 class Saver:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "images": ("IMAGE",),

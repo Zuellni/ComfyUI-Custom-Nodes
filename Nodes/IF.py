@@ -10,7 +10,7 @@ from transformers import T5EncoderModel
 
 class Loader:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "model": (
@@ -90,7 +90,7 @@ class Loader:
 
 class Encoder:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "model": ("IF_MODEL",),
@@ -114,7 +114,7 @@ class Encoder:
 
 class Stage_I:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "model": ("IF_MODEL",),
@@ -163,7 +163,7 @@ class Stage_I:
 
 class Stage_II:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "model": ("IF_MODEL",),
@@ -213,7 +213,7 @@ class Stage_II:
 
 class Stage_III:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "model": ("IF_MODEL",),

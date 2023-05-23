@@ -4,7 +4,7 @@ import requests
 
 class Loader:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "character": ("STRING", {"default": "Example"}),
@@ -69,7 +69,7 @@ class Loader:
 
 class Prompt:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "text": ("STRING", {"default": "", "multiline": True}),
@@ -89,30 +89,37 @@ class Prompt:
         return (response.json()["results"][0]["history"]["visible"][-1][1],)
 
 
-class Join:
+class Format:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
+        vars = {f"var_{i + 1}": ("STRING", {"default": ""}) for i in range(cls.COUNT)}
+
         return {
             "required": {
-                "text_1": ("STRING", {"default": ""}),
-                "text_2": ("STRING", {"default": ""}),
-                "text_3": ("STRING", {"default": ""}),
-                "text_4": ("STRING", {"default": ""}),
-                "text_5": ("STRING", {"default": ""}),
+                "text": ("STRING", {"default": "", "multiline": True}),
+                "count": ("INT", {"default": cls.COUNT, "min": 1, "max": 9}),
             },
+            "optional": vars,
         }
 
+    COUNT = 1
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
+    OUTPUT_NODE = True
     RETURN_TYPES = ("STRING",)
 
-    def process(self, **texts):
-        return ("".join(texts.values()),)
+    def process(self, text, count, **vars):
+        __class__.COUNT = count
+
+        for key, value in vars.items():
+            text = text.replace(key, value)
+
+        return (text,)
 
 
 class Print:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "prefix": ("STRING", {"default": "Zuellni"}),

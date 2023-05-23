@@ -6,7 +6,7 @@ from transformers import pipeline
 
 class Loader:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "aesthetic": ([False, True], {"default": False}),
@@ -60,7 +60,7 @@ class Loader:
 
 class Selector:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "count": ("INT", {"default": 1, "min": 0, "max": 64}),
