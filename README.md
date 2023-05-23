@@ -43,3 +43,4 @@ Multi&nbsp;Crop | Center crops/pads images/latents to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to images/latents.
 Multi&nbsp;Repeat | Allows for repeating images/latents `batch_size` times, similar to `Latent Encoder`.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to upscale images/latents.
+Text&nbsp;Nodes | Some experimental nodes utilizing [text-generation-webui](https://github.com/oobabooga/text-generation-webui) API to generate and manipulate prompts.
