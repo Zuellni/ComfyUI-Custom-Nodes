@@ -51,15 +51,14 @@ class Loader:
             image[:3, image[3, :, :] == 0] = 0
             images.append(image)
 
-        if len(images) > 1:
-            min_height = min([i.shape[1] for i in images])
-            min_width = min([i.shape[2] for i in images])
-            min_dim = min(min_height, min_width) // 8 * 8
-            images = [TF.resize(i, min_dim) for i in images]
+        min_height = min([i.shape[1] for i in images])
+        min_width = min([i.shape[2] for i in images])
+        min_dim = min(min_height, min_width) // 8 * 8
+        images = [TF.resize(i, min_dim) for i in images]
 
-            min_height = min([i.shape[1] for i in images]) // 8 * 8
-            min_width = min([i.shape[2] for i in images]) // 8 * 8
-            images = [TF.center_crop(i, (min_height, min_width)) for i in images]
+        min_height = min([i.shape[1] for i in images]) // 8 * 8
+        min_width = min([i.shape[2] for i in images]) // 8 * 8
+        images = [TF.center_crop(i, (min_height, min_width)) for i in images]
 
         images = torch.stack(images)
         images = images.permute(0, 2, 3, 1)
@@ -75,7 +74,7 @@ class Saver:
             "required": {
                 "images": ("IMAGE",),
                 "output_dir": ("STRING", {"default": get_output_directory()}),
-                "format": (["gif", "grid", "png"], {"default": "png"}),
+                "format": (["gif", "grid", "jpg", "png"], {"default": "png"}),
                 "optimize": ([False, True], {"default": False}),
                 "fps": ("INT", {"default": 0, "min": 0, "max": 1000}),
             },
@@ -119,7 +118,7 @@ class Saver:
             nrow = fps if fps else int(-(images.shape[0] ** 0.5 // -1))
             images = make_grid(images, nrow=nrow, padding=0)
             images = TF.to_pil_image(images)
-            images.save(output("png"), optimize=optimize)
+            images.save(output("jpg"), optimize=optimize)
         else:
             for image in pil_images:
                 image.save(output(format), optimize=optimize)

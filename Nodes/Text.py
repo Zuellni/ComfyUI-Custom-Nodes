@@ -89,30 +89,91 @@ class Prompt:
         return (response.json()["results"][0]["history"]["visible"][-1][1],)
 
 
-class Format:
+class Condition:
     @classmethod
     def INPUT_TYPES(cls):
-        vars = {
-            f"var_{i + 1}": ("STRING", {"default": ""}) for i in range(cls.VAR_COUNT)
-        }
-
         return {
             "required": {
-                "text": ("STRING", {"default": "", "multiline": True}),
-                "var_count": ("INT", {"default": cls.VAR_COUNT, "min": 1, "max": 9}),
+                "a": ("STRING", {"default": ""}),
+                "condition": (
+                    [
+                        "==",
+                        "!=",
+                        "<",
+                        "<=",
+                        ">",
+                        ">=",
+                        "contains",
+                        "starts with",
+                        "ends with",
+                    ],
+                    {"default": "=="},
+                ),
+                "b": ("STRING", {"default": ""}),
             },
-            "optional": vars,
+            "optional": {
+                "images": ("IMAGE",),
+                "latents": ("LATENT",),
+            },
         }
 
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
-    OUTPUT_NODE = True
+    RETURN_NAMES = ("IMAGES", "LATENTS", "RESULT")
+    RETURN_TYPES = ("IMAGE", "LATENT", "STRING")
+
+    def process(self, a, condition, b, images=None, latents=None):
+        result = False
+        fa = a
+        fb = b
+
+        try:
+            fa = float(a)
+            fb = float(b)
+        except:
+            pass
+
+        operations = {
+            "==": lambda: fa == fb,
+            "!=": lambda: fa != fb,
+            "<": lambda: fa < fb,
+            "<=": lambda: fa <= fb,
+            ">": lambda: fa > fb,
+            ">=": lambda: fa >= fb,
+            "contains": lambda: b in a,
+            "starts with": lambda: a.startswith(b),
+            "ends with": lambda: a.endswith(b),
+        }
+
+        result = operations.get(condition, lambda: False)()
+
+        if result:
+            return (images, latents, "true")
+
+        return (None, None, "false")
+
+
+class Format:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"default": "", "multiline": True}),
+            },
+            "optional": {
+                "var_1": ("INT", {"default": ""}),
+                "var_2": ("INT", {"default": ""}),
+                "var_3": ("INT", {"default": ""}),
+                "var_4": ("INT", {"default": ""}),
+                "var_5": ("INT", {"default": ""}),
+            },
+        }
+
+    CATEGORY = "Zuellni/Text"
+    FUNCTION = "process"
     RETURN_TYPES = ("STRING",)
-    VAR_COUNT = 1
 
-    def process(self, text, var_count, **vars):
-        __class__.VAR_COUNT = var_count
-
+    def process(self, text, **vars):
         for key, value in vars.items():
             text = text.replace(key, value)
 
@@ -136,5 +197,5 @@ class Print:
 
     def process(self, prefix, text):
         prefix = f"[\033[94m{prefix}\033[0m]: " if prefix else ""
-        print(prefix + text)
+        print(f"{prefix}{text}")
         return (None,)
