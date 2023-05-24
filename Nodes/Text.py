@@ -161,11 +161,11 @@ class Format:
                 "text": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
-                "var_1": ("INT", {"default": ""}),
-                "var_2": ("INT", {"default": ""}),
-                "var_3": ("INT", {"default": ""}),
-                "var_4": ("INT", {"default": ""}),
-                "var_5": ("INT", {"default": ""}),
+                "var_1": ("STRING", {"default": ""}),
+                "var_2": ("STRING", {"default": ""}),
+                "var_3": ("STRING", {"default": ""}),
+                "var_4": ("STRING", {"default": ""}),
+                "var_5": ("STRING", {"default": ""}),
             },
         }
 
