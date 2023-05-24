@@ -96,7 +96,7 @@ class Select:
         pil_images = torch.clamp(pil_images * 255.0, 0, 255)
         pil_images = pil_images.cpu().to(torch.uint8)
         pil_images = [TF.to_pil_image(i) for i in pil_images]
-        scores = {i: 1.0 for i in range(images.shape[0])}
+        scores = {i: 0.0 for i in range(images.shape[0])}
 
         for model in models:
             pipe = model["pipe"]
@@ -109,11 +109,11 @@ class Select:
             values = pipe(pil_images, top_k=w_len)
 
             for index, value in enumerate(values):
-                score = [v["score"] * w_map[v["label"]] / w_sum for v in value]
-                scores[index] *= sum(score)
+                score = [v["score"] * w_map[v["label"]] for v in value]
+                scores[index] += sum(score) / w_sum
 
-        scores_str = ", ".join((f"{v:.3f}" for v in scores.values()))
         scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)
+        scores_str = ", ".join([f"{v:.3f}" for k, v in scores][:count])
         images = [images[v[0]] for v in scores[:count]]
         images = torch.stack(images)
 
