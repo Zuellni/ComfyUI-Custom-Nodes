@@ -51,6 +51,8 @@ class Loader:
         }
 
         if model.startswith("T5"):
+            quantize = model != "T5-16"
+
             quantization_config = {
                 "T5-4": BitsAndBytesConfig(
                     device_map="auto",
@@ -80,7 +82,7 @@ class Loader:
                 **config,
             )
 
-            if model != "T5-16":
+            if quantize:
                 return (model,)
         elif model == "III":
             model = DiffusionPipeline.from_pretrained(
