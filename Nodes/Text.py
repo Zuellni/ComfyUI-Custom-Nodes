@@ -114,15 +114,16 @@ class Condition:
             "optional": {
                 "images": ("IMAGE",),
                 "latents": ("LATENT",),
+                "masks": ("MASK",),
             },
         }
 
     CATEGORY = "Zuellni/Text"
     FUNCTION = "process"
-    RETURN_NAMES = ("IMAGES", "LATENTS", "RESULT")
-    RETURN_TYPES = ("IMAGE", "LATENT", "STRING")
+    RETURN_NAMES = ("IMAGES", "LATENTS", "MASKS", "RESULT")
+    RETURN_TYPES = ("IMAGE", "LATENT", "MASK", "STRING")
 
-    def process(self, a, condition, b, images=None, latents=None):
+    def process(self, a, condition, b, images=None, latents=None, masks=None):
         result = False
         fa = a
         fb = b
@@ -148,9 +149,9 @@ class Condition:
         result = operations.get(condition, lambda: False)()
 
         if result:
-            return (images, latents, "true")
+            return (images, latents, masks, "true")
 
-        return (None, None, "false")
+        return (None, None, None, "false")
 
 
 class Format:
