@@ -1,3 +1,5 @@
-bitsandbytes >= 0.38.1; platform_system != "Windows"
-https://github.com/Zuellni/Bitsandbytes-Windows/raw/main/bitsandbytes-0.38.1-py3-none-any.whl; platform_system == "Windows"
-git+https://github.com/Zuellni/Diffusers.git
+bitsandbytes >= 0.39.0; platform_system != "Windows"
+https://github.com/jllllll/bitsandbytes-windows-webui/raw/main/bitsandbytes-0.39.0-py3-none-any.whl; platform_system == "Windows"
+git+https://github.com/huggingface/accelerate
+git+https://github.com/huggingface/diffusers
+git+https://github.com/huggingface/transformers

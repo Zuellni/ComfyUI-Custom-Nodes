@@ -1,8 +1,5 @@
 import torch
-from comfy.model_management import (
-    InterruptProcessingException,
-    throw_exception_if_processing_interrupted,
-)
+from comfy.model_management import throw_exception_if_processing_interrupted
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
 from transformers import T5EncoderModel
@@ -14,18 +11,8 @@ class Loader:
         return {
             "required": {
                 "model": (
-                    [
-                        "NONE",
-                        "T5-FP8",
-                        "T5-FP16",
-                        "I-M",
-                        "I-L",
-                        "I-XL",
-                        "II-M",
-                        "II-L",
-                        "III",
-                    ],
-                    {"default": "NONE"},
+                    ["T5", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"],
+                    {"default": "T5"},
                 ),
                 "device": ("STRING", {"default": ""}),
             },
@@ -37,9 +24,6 @@ class Loader:
     RETURN_TYPES = ("IF_MODEL",)
 
     def process(self, model, device):
-        if model == "NONE":
-            raise InterruptProcessingException()
-
         config = {
             "variant": "fp16",
             "torch_dtype": torch.float16,
@@ -49,15 +33,16 @@ class Loader:
             "watermarker": None,
         }
 
-        if model in ["T5-FP8", "T5-FP16"]:
-            load_in_8bit = model == "T5-FP8"
-
+        if model == "T5":
             text_encoder = T5EncoderModel.from_pretrained(
                 "DeepFloyd/IF-I-M-v1.0",
                 subfolder="text_encoder",
-                load_in_8bit=load_in_8bit,
-                device_map="auto" if load_in_8bit else None,
-                variant="8bit" if load_in_8bit else "fp16",
+                variant=config["variant"],
+                device_map="auto",
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
             )
 
             model = DiffusionPipeline.from_pretrained(
@@ -67,8 +52,7 @@ class Loader:
                 **config,
             )
 
-            if load_in_8bit:
-                return (model,)
+            return (model,)
         elif model == "III":
             model = DiffusionPipeline.from_pretrained(
                 "stabilityai/stable-diffusion-x4-upscaler",
@@ -156,8 +140,8 @@ class Stage_I:
             output_type="pt",
         ).images
 
-        images = (images / 2 + 0.5).clamp(0, 1)
-        images = images.cpu().float().permute(0, 2, 3, 1)
+        images = (images - images.min()) / (images.max() - images.min())
+        images = images.clamp(0, 1).permute(0, 2, 3, 1).float().cpu()
         return (images,)
 
 
@@ -207,7 +191,7 @@ class Stage_II:
             output_type="pt",
         ).images
 
-        images = images.cpu().float().permute(0, 2, 3, 1)
+        images = images.permute(0, 2, 3, 1).float().cpu()
         return (images,)
 
 
@@ -278,5 +262,5 @@ class Stage_III:
             output_type="pt",
         ).images
 
-        images = images.cpu().float().permute(0, 2, 3, 1)
+        images = images.permute(0, 2, 3, 1).float().cpu()
         return (images,)
