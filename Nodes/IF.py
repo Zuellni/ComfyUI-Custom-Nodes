@@ -1,8 +1,11 @@
 import torch
-from comfy.model_management import throw_exception_if_processing_interrupted
+from comfy.model_management import (
+    InterruptProcessingException,
+    throw_exception_if_processing_interrupted,
+)
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
-from transformers import T5EncoderModel
+from transformers import BitsAndBytesConfig, T5EncoderModel
 
 
 class Loader:
@@ -11,8 +14,19 @@ class Loader:
         return {
             "required": {
                 "model": (
-                    ["T5", "I-M", "I-L", "I-XL", "II-M", "II-L", "III"],
-                    {"default": "T5"},
+                    [
+                        "none",
+                        "T5-4",
+                        "T5-8",
+                        "T5-16",
+                        "I-M",
+                        "I-L",
+                        "I-XL",
+                        "II-M",
+                        "II-L",
+                        "III",
+                    ],
+                    {"default": "none"},
                 ),
                 "device": ("STRING", {"default": ""}),
             },
@@ -24,6 +38,9 @@ class Loader:
     RETURN_TYPES = ("IF_MODEL",)
 
     def process(self, model, device):
+        if model == "none":
+            raise InterruptProcessingException()
+
         config = {
             "variant": "fp16",
             "torch_dtype": torch.float16,
@@ -33,16 +50,27 @@ class Loader:
             "watermarker": None,
         }
 
-        if model == "T5":
+        if model.startswith("T5"):
+            quantization_config = {
+                "T5-4": BitsAndBytesConfig(
+                    device_map="auto",
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                ),
+                "T5-8": BitsAndBytesConfig(
+                    device_map="auto",
+                    load_in_8bit=True,
+                ),
+                "T5-16": None,
+            }
+
             text_encoder = T5EncoderModel.from_pretrained(
                 "DeepFloyd/IF-I-M-v1.0",
                 subfolder="text_encoder",
                 variant=config["variant"],
-                device_map="auto",
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_compute_dtype=torch.bfloat16,
+                quantization_config=quantization_config[model],
             )
 
             model = DiffusionPipeline.from_pretrained(
@@ -52,7 +80,8 @@ class Loader:
                 **config,
             )
 
-            return (model,)
+            if model != "T5-16":
+                return (model,)
         elif model == "III":
             model = DiffusionPipeline.from_pretrained(
                 "stabilityai/stable-diffusion-x4-upscaler",
