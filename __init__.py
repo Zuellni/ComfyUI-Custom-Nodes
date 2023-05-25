@@ -18,7 +18,6 @@ config = {
         "Aesthetic": True,
         "IF": True,
         "Image": True,
-        "Latent": True,
         "Multi": True,
         "Text": True,
     },

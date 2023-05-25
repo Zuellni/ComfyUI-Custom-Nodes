@@ -20,7 +20,7 @@ git -C custom_nodes\Zuellni pull
 Name | Description
 :--- | :---
 Aesthetic&nbsp;Loader | Loads models for use with `Aesthetic Select`.
-Aesthetic&nbsp;Select | Returns `count` best tensors based on [aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[style](https://huggingface.co/cafeai/cafe_style)/[waifu](https://huggingface.co/cafeai/cafe_waifu)/[age](https://huggingface.co/nateraw/vit-age-classifier) classifiers. If no models are selected then acts like `LatentFromBatch` and returns 1 image/latent with 1-based index. Setting `count` to 0 stops processing for connected nodes.
+Aesthetic&nbsp;Select | Returns `count` best tensors based on [aesthetic](https://huggingface.co/cafeai/cafe_aesthetic)/[style](https://huggingface.co/cafeai/cafe_style)/[waifu](https://huggingface.co/cafeai/cafe_waifu)/[age](https://huggingface.co/nateraw/vit-age-classifier) classifiers. If no models are selected then acts like `LatentFromBatch` and returns a single tensor with 1-based index. Setting `count` to 0 stops processing for connected nodes.
 
 ## IF Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically, but you will have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.
@@ -37,10 +37,8 @@ Name | Description
 :--- | :---
 Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
 Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif.
-Latent&nbsp;Decoder | Combines `VAEDecode` and `VAEDecodeTiled`. Probably not necessary since `VAEDecodeTiled` is now used on error, but just here for the sake of completeness.
-Latent&nbsp;Encoder | As above, but adds `batch_size`. Allows loading 1 image and denoising it `batch_size` times without having to create multiple sampler nodes.
 Multi&nbsp;Crop | Center crops/pads tensors to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to tensors.
-Multi&nbsp;Repeat | Allows for repeating tensors `batch_size` times, similar to `Latent Encoder`.
+Multi&nbsp;Repeat | Allows for repeating tensors `batch_size` times.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to resize tensors.
 Text&nbsp;Nodes | Some experimental nodes utilizing [text-generation-webui](https://github.com/oobabooga/text-generation-webui) API to generate and manipulate prompts.
