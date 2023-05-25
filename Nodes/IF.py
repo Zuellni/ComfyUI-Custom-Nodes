@@ -141,7 +141,7 @@ class Stage_I:
         ).images
 
         images = (images - images.min()) / (images.max() - images.min())
-        images = images.clamp(0, 1).permute(0, 2, 3, 1).float().cpu()
+        images = images.clamp(0, 1).permute(0, 2, 3, 1).to("cpu", torch.float32)
         return (images,)
 
 
@@ -191,7 +191,7 @@ class Stage_II:
             output_type="pt",
         ).images
 
-        images = images.permute(0, 2, 3, 1).float().cpu()
+        images = images.permute(0, 2, 3, 1).to("cpu", torch.float32)
         return (images,)
 
 
@@ -262,5 +262,5 @@ class Stage_III:
             output_type="pt",
         ).images
 
-        images = images.permute(0, 2, 3, 1).float().cpu()
+        images = images.permute(0, 2, 3, 1).to("cpu", torch.float32)
         return (images,)

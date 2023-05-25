@@ -68,16 +68,17 @@ class Select:
             "optional": {
                 "images": ("IMAGE",),
                 "latents": ("LATENT",),
+                "masks": ("MASK",),
                 "models": ("LIST",),
             },
         }
 
     CATEGORY = "Zuellni/Aesthetic"
     FUNCTION = "process"
-    RETURN_NAMES = ("IMAGES", "LATENTS", "SCORES")
-    RETURN_TYPES = ("IMAGE", "LATENT", "STRING")
+    RETURN_NAMES = ("IMAGES", "LATENTS", "MASKS", "SCORES")
+    RETURN_TYPES = ("IMAGE", "LATENT", "MASK", "STRING")
 
-    def process(self, count, images=None, latents=None, models=None):
+    def process(self, count, images=None, latents=None, masks=None, models=None):
         if not count or (images is None and not models):
             raise InterruptProcessingException()
 
@@ -85,16 +86,19 @@ class Select:
             if images is not None:
                 images = images[count - 1].unsqueeze(0)
 
-            if latents:
+            if latents is not None:
                 latents = latents["samples"]
                 latents = latents[count - 1].unsqueeze(0)
                 latents = {"samples": latents}
 
-            return (images, latents, "")
+            if masks is not None:
+                masks = masks[count - 1].unsqueeze(0)
+
+            return (images, latents, masks, "")
 
         pil_images = images.permute(0, 3, 1, 2)
-        pil_images = torch.clamp(pil_images * 255.0, 0, 255)
-        pil_images = pil_images.cpu().to(torch.uint8)
+        pil_images = torch.clamp(pil_images * 255, 0, 255)
+        pil_images = pil_images.to("cpu", torch.uint8)
         pil_images = [TF.to_pil_image(i) for i in pil_images]
         scores = {i: 0.0 for i in range(images.shape[0])}
 
@@ -112,15 +116,19 @@ class Select:
                 score = [v["score"] * w_map[v["label"]] for v in value]
                 scores[index] += sum(score) / w_sum
 
-        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)
-        scores_str = ", ".join([f"{v:.3f}" for k, v in scores][:count])
-        images = [images[v[0]] for v in scores[:count]]
+        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:count]
+        scores_str = ", ".join([f"{v:.3f}" for k, v in scores])
+        images = [images[v[0]] for v in scores]
         images = torch.stack(images)
 
-        if latents:
+        if latents is not None:
             latents = latents["samples"]
-            latents = [latents[v[0]] for v in scores[:count]]
+            latents = [latents[v[0]] for v in scores]
             latents = torch.stack(latents)
             latents = {"samples": latents}
 
-        return (images, latents, scores_str)
+        if masks is not None:
+            masks = [masks[v[0]] for v in scores]
+            masks = torch.stack(masks)
+
+        return (images, latents, masks, scores_str)

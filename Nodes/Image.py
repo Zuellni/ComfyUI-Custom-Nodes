@@ -100,8 +100,8 @@ class Saver:
             images = torch.cat((images, masks), dim=-1)
 
         images = images.permute(0, 3, 1, 2)
-        images = torch.clamp(images * 255.0, 0, 255)
-        images = images.cpu().to(torch.uint8)
+        images = torch.clamp(images * 255, 0, 255)
+        images = images.to("cpu", torch.uint8)
         pil_images = [TF.to_pil_image(i) for i in images]
 
         if format == "gif":
