@@ -124,31 +124,25 @@ class Condition:
     RETURN_TYPES = ("IMAGE", "LATENT", "MASK", "STRING")
 
     def process(self, a, condition, b, images=None, latents=None, masks=None):
-        result = False
-        fa = a
-        fb = b
-
         try:
-            fa = float(a)
-            fb = float(b)
+            a = float(a)
+            b = float(b)
         except:
             pass
 
         operations = {
-            "==": lambda: fa == fb,
-            "!=": lambda: fa != fb,
-            "<": lambda: fa < fb,
-            "<=": lambda: fa <= fb,
-            ">": lambda: fa > fb,
-            ">=": lambda: fa >= fb,
+            "==": lambda: a == b,
+            "!=": lambda: a != b,
+            "<": lambda: a < b,
+            "<=": lambda: a <= b,
+            ">": lambda: a > b,
+            ">=": lambda: a >= b,
             "contains": lambda: b in a,
             "starts with": lambda: a.startswith(b),
             "ends with": lambda: a.endswith(b),
         }
 
-        result = operations.get(condition, lambda: False)()
-
-        if result:
+        if operations[condition]():
             return (images, latents, masks, "true")
 
         return (None, None, None, "false")
