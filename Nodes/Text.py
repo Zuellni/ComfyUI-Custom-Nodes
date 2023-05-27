@@ -1,5 +1,6 @@
 import json
 import requests
+from comfy.model_management import InterruptProcessingException
 
 
 class Loader:
@@ -173,6 +174,27 @@ class Format:
             text = text.replace(key, value)
 
         return (text,)
+
+
+class Interrupt:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "result": ("STRING", {"default": "false"}),
+            }
+        }
+
+    CATEGORY = "Zuellni/Text"
+    FUNCTION = "process"
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+
+    def process(self, result):
+        if result == "true":
+            raise InterruptProcessingException()
+
+        return (None,)
 
 
 class Print:
