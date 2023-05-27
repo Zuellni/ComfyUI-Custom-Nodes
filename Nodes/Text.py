@@ -95,7 +95,7 @@ class Condition:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "a": ("STRING", {"default": ""}),
+                "var_1": ("STRING", {"default": ""}),
                 "condition": (
                     [
                         "==",
@@ -110,7 +110,8 @@ class Condition:
                     ],
                     {"default": "=="},
                 ),
-                "b": ("STRING", {"default": ""}),
+                "var_2": ("STRING", {"default": ""}),
+                "interrupt": ([False, True], {"default": False}),
             },
             "optional": {
                 "images": ("IMAGE",),
@@ -124,27 +125,39 @@ class Condition:
     RETURN_NAMES = ("IMAGES", "LATENTS", "MASKS", "RESULT")
     RETURN_TYPES = ("IMAGE", "LATENT", "MASK", "STRING")
 
-    def process(self, a, condition, b, images=None, latents=None, masks=None):
+    def process(
+        self,
+        var_1,
+        condition,
+        var_2,
+        interrupt,
+        images=None,
+        latents=None,
+        masks=None,
+    ):
         try:
-            a = float(a)
-            b = float(b)
+            var_1 = float(var_1)
+            var_2 = float(var_2)
         except:
             pass
 
         operations = {
-            "==": lambda: a == b,
-            "!=": lambda: a != b,
-            "<": lambda: a < b,
-            "<=": lambda: a <= b,
-            ">": lambda: a > b,
-            ">=": lambda: a >= b,
-            "contains": lambda: b in a,
-            "starts with": lambda: a.startswith(b),
-            "ends with": lambda: a.endswith(b),
+            "==": lambda: var_1 == var_2,
+            "!=": lambda: var_1 != var_2,
+            "<": lambda: var_1 < var_2,
+            "<=": lambda: var_1 <= var_2,
+            ">": lambda: var_1 > var_2,
+            ">=": lambda: var_1 >= var_2,
+            "contains": lambda: var_2 in var_1,
+            "starts with": lambda: var_1.startswith(var_2),
+            "ends with": lambda: var_1.endswith(var_2),
         }
 
         if operations[condition]():
             return (images, latents, masks, "true")
+
+        if interrupt:
+            raise InterruptProcessingException()
 
         return (None, None, None, "false")
 
@@ -174,27 +187,6 @@ class Format:
             text = text.replace(key, value)
 
         return (text,)
-
-
-class Interrupt:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "result": ("STRING", {"default": "false"}),
-            }
-        }
-
-    CATEGORY = "Zuellni/Text"
-    FUNCTION = "process"
-    OUTPUT_NODE = True
-    RETURN_TYPES = ()
-
-    def process(self, result):
-        if result == "true":
-            raise InterruptProcessingException()
-
-        return (None,)
 
 
 class Print:
