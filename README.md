@@ -51,7 +51,7 @@ Text&nbsp;Loader | Used as initializer for `Text Prompt` so you don't have to sp
 Text&nbsp;Prompt | Queries the API with params from `Text Loader` and returns a `string` you can use as input for other nodes like `CLIP Text Encode`.
 Text&nbsp;Condition | Returns input tensors if variables match some condition, or crashes and burns otherwise. Might be useful for something, not quite sure what yet.
 Text&nbsp;Format | Joins input `string` with multiple variables and returns a single output `string`. Specifying `var_1-5` somewhere in the input field will replace it with said variable's value.
-
+Text&nbsp;Print | Prints `string` input to console for debugging purposes (or just to see what sort of prompt your LLM came up with).
 ## Other Nodes
 Name | Description
 :--- | :---
