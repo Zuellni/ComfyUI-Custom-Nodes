@@ -6,15 +6,19 @@ Clone the repository to `custom_nodes` in your ComfyUI directory:
 git clone https://github.com/Zuellni/ComfyUI-Custom-Nodes custom_nodes\Zuellni
 ```
 
-A `config.json` file will be created on first run in the extension's directory. Requirements should be installed automatically but if that doesn't happen you can install them with:
+A `config.json` file will be created on first run in the extension's directory.  
+Requirements should be installed automatically but if that doesn't happen you can install them with:
 ```
 pip install -r custom_nodes\Zuellni\requirements.txt
 ```
+You can skip the installation if you don't wish to use the `IF` nodes.  
+Run ComfyUI once, wait till the config file gets created, then quit and set `IF` to `false` under `Load Nodes` in `config.json`.
 
-To update set `Update Repository` to `true` in `config.json` or run:
+To enable automatic updates set `Update Repository` to `true` in the config. You can also update with:
 ```
 git -C custom_nodes\Zuellni pull
 ```
+
 
 ## Aesthetic Nodes
 Name | Description
@@ -32,13 +36,25 @@ IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns ima
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them x4.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
 
+## Text Nodes
+Experimental nodes utilizing [text-generation-webui](https://github.com/oobabooga/text-generation-webui) to generate and manipulate prompts. Webui needs to be running with `--api` and a preloaded model since it's not possible to change it through the API currently.
+
+Example startup command for [WizardLM](https://huggingface.co/TheBloke/WizardLM-7B-uncensored-GPTQ):
+```
+python server.py --api --model llama-7b-4bit-128g-wizard
+```
+Name | Description
+:--- | :---
+Text&nbsp;Loader | Used as initializer for `Text Prompt` so you don't have to specify the same params multiple times. Set your API endpoint with `api`, instruction template for your loaded model with `template` (might not be necessary), and the character used to generate prompts with `character` (format depends on your needs).
+Text&nbsp:Prompt | Queries the API with params from `Text Loader` and returns a `string` you can use as input for other nodes like `CLIP Text Encode`.
+Text&nbsp;Condition | Returns input tensors if variables match some condition, or crashes and burns otherwise. Might be useful for something, not quite sure what yet.
+Text&nbsp:Format | Joins input `string` with multiple variables and returns a single output `string`. Specifying `var_1-5` somewhere in the input field will replace it with said variable's value.
 ## Other Nodes
 Name | Description
 :--- | :---
 Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
-Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif.
+Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif as well.
 Multi&nbsp;Crop | Center crops/pads tensors to specified dimensions.
 Multi&nbsp;Noise | Adds random noise to tensors.
 Multi&nbsp;Repeat | Allows for repeating tensors `batch_size` times.
 Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to resize tensors.
-Text&nbsp;Nodes | Some experimental nodes utilizing [text-generation-webui](https://github.com/oobabooga/text-generation-webui) API to generate and manipulate prompts.
