@@ -37,6 +37,22 @@ IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns ima
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them x4.
 IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
 
+## Image Nodes
+Name | Description
+:--- | :---
+Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
+Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif as well.
+
+## Multi Nodes
+Nodes that work with multiple types of tensors - images, latents, and masks.
+
+Name | Description
+:--- | :---
+Multi&nbsp;Crop | Center crops/pads tensors to specified dimensions.
+Multi&nbsp;Noise | Adds random noise to tensors.
+Multi&nbsp;Repeat | Allows for repeating tensors `batch_size` times.
+Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to resize tensors.
+
 ## Text Nodes
 Experimental nodes utilizing [text-generation-webui](https://github.com/oobabooga/text-generation-webui) to generate and manipulate prompts. Webui needs to be running with `--api` and a preloaded model since it's not possible to change it through the API currently.
 
@@ -52,12 +68,3 @@ Text&nbsp;Prompt | Queries the API with params from `Text Loader` and returns a 
 Text&nbsp;Condition | Returns input tensors and `true` if variables match some condition, `false` otherwise. Will interrupt the generation if condition is not met and `interrupt` set to `true`.
 Text&nbsp;Format | Joins input `string` with multiple variables and returns a single output `string`. Specifying `var_1-5` somewhere in the input field will replace it with said variable's value.
 Text&nbsp;Print | Prints `string` input to console for debugging purposes (or just to see what sort of prompt your LLM came up with).
-## Other Nodes
-Name | Description
-:--- | :---
-Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
-Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif as well.
-Multi&nbsp;Crop | Center crops/pads tensors to specified dimensions.
-Multi&nbsp;Noise | Adds random noise to tensors.
-Multi&nbsp;Repeat | Allows for repeating tensors `batch_size` times.
-Multi&nbsp;Resize | Similar to `LatentUpscale` but uses `scale` instead of width/height to resize tensors.
