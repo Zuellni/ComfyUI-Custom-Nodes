@@ -28,6 +28,7 @@ Aesthetic&nbsp;Select | Returns `count` best tensors based on [aesthetic](https:
 
 ## IF Nodes
 A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd). Models will be downloaded automatically, but you will have to agree to the terms of use on the site, create an access token, and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with it.
+
 Name | Description
 :--- | :---
 IF&nbsp;Loader | Loads models for use with other `IF` nodes. `Device` can be used to move the models to specific devices, eg `cpu`, `cuda:0`, `cuda:1`. Leaving it empty enables offloading.
@@ -43,12 +44,14 @@ Example startup command for [WizardLM](https://huggingface.co/TheBloke/WizardLM-
 ```
 python server.py --api --model llama-7b-4bit-128g-wizard
 ```
+
 Name | Description
 :--- | :---
 Text&nbsp;Loader | Used as initializer for `Text Prompt` so you don't have to specify the same params multiple times. Set your API endpoint with `api`, instruction template for your loaded model with `template` (might not be necessary), and the character used to generate prompts with `character` (format depends on your needs).
 Text&nbsp:Prompt | Queries the API with params from `Text Loader` and returns a `string` you can use as input for other nodes like `CLIP Text Encode`.
 Text&nbsp;Condition | Returns input tensors if variables match some condition, or crashes and burns otherwise. Might be useful for something, not quite sure what yet.
-Text&nbsp:Format | Joins input `string` with multiple variables and returns a single output `string`. Specifying `var_1-5` somewhere in the input field will replace it with said variable's value.
+Text&nbsp;Format | Joins input `string` with multiple variables and returns a single output `string`. Specifying `var_1-5` somewhere in the input field will replace it with said variable's value.
+
 ## Other Nodes
 Name | Description
 :--- | :---
