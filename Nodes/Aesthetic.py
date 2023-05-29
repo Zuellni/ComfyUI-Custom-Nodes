@@ -79,7 +79,7 @@ class Select:
     RETURN_TYPES = ("IMAGE", "LATENT", "MASK", "STRING")
 
     def process(self, count, images=None, latents=None, masks=None, models=None):
-        if not count or (images is None and not models):
+        if not count:
             raise InterruptProcessingException()
 
         if images is None or not models:
