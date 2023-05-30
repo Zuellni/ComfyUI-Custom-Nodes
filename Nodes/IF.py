@@ -1,33 +1,18 @@
 import torch
-from comfy.model_management import (
-    InterruptProcessingException,
-    throw_exception_if_processing_interrupted,
-)
+from comfy.model_management import throw_exception_if_processing_interrupted
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
 from transformers import BitsAndBytesConfig, T5EncoderModel
 
 
-class Loader:
+class Load_Encoder:
     @classmethod
     def INPUT_TYPES(cls):
+        models = list(cls._MODELS.keys())
+
         return {
             "required": {
-                "model": (
-                    [
-                        "none",
-                        "T5-4",
-                        "T5-8",
-                        "T5-16",
-                        "I-M",
-                        "I-L",
-                        "I-XL",
-                        "II-M",
-                        "II-L",
-                        "III",
-                    ],
-                    {"default": "none"},
-                ),
+                "model": (models, {"default": models[0]}),
                 "device": ("STRING", {"default": ""}),
             },
         }
@@ -35,78 +20,123 @@ class Loader:
     CATEGORY = "Zuellni/IF"
     FUNCTION = "process"
     RETURN_NAMES = ("MODEL",)
-    RETURN_TYPES = ("IF_MODEL",)
+    RETURN_TYPES = ("S0_MODEL",)
 
-    def process(self, model, device):
-        if model == "none":
-            raise InterruptProcessingException()
+    _CONFIG = {
+        "variant": "fp16",
+        "torch_dtype": torch.float16,
+        "requires_safety_checker": False,
+        "feature_extractor": None,
+        "safety_checker": None,
+        "watermarker": None,
+    }
 
-        config = {
-            "variant": "fp16",
-            "torch_dtype": torch.float16,
-            "requires_safety_checker": False,
-            "feature_extractor": None,
-            "safety_checker": None,
-            "watermarker": None,
-        }
+    _MODELS = {
+        "4-bit": BitsAndBytesConfig(
+            device_map="auto",
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+        ),
+        "8-bit": BitsAndBytesConfig(
+            device_map="auto",
+            load_in_8bit=True,
+        ),
+        "16-bit": None,
+    }
 
-        if model.startswith("T5"):
-            quantize = model != "T5-16"
-
-            quantization_config = {
-                "T5-4": BitsAndBytesConfig(
-                    device_map="auto",
-                    load_in_4bit=True,
-                    bnb_4bit_use_double_quant=True,
-                ),
-                "T5-8": BitsAndBytesConfig(
-                    device_map="auto",
-                    load_in_8bit=True,
-                ),
-                "T5-16": None,
-            }
-
-            text_encoder = T5EncoderModel.from_pretrained(
-                "DeepFloyd/IF-I-M-v1.0",
-                subfolder="text_encoder",
-                variant=config["variant"],
-                quantization_config=quantization_config[model],
-            )
-
-            model = DiffusionPipeline.from_pretrained(
-                "DeepFloyd/IF-I-M-v1.0",
-                text_encoder=text_encoder,
-                unet=None,
-                **config,
-            )
-
-            if quantize:
-                return (model,)
-        elif model == "III":
-            model = DiffusionPipeline.from_pretrained(
-                "stabilityai/stable-diffusion-x4-upscaler",
-                **config,
-            )
-        else:
-            model = DiffusionPipeline.from_pretrained(
-                f"DeepFloyd/IF-{model}-v1.0",
-                text_encoder=None,
-                **config,
-            )
-
+    def offload(self, model, device):
         if device:
             return (model.to(device),)
 
         model.enable_model_cpu_offload()
         return (model,)
 
+    def process(self, model, device):
+        quantize = model != "16-bit"
 
-class Encoder:
+        text_encoder = T5EncoderModel.from_pretrained(
+            "DeepFloyd/IF-I-M-v1.0",
+            subfolder="text_encoder",
+            variant="fp16",
+            quantization_config=__class__._MODELS[model],
+        )
+
+        model = DiffusionPipeline.from_pretrained(
+            "DeepFloyd/IF-I-M-v1.0",
+            text_encoder=text_encoder,
+            unet=None,
+            **__class__._CONFIG,
+        )
+
+        if quantize:
+            return (model,)
+
+        return self.offload(model, device)
+
+
+class Load_Stage_I(Load_Encoder):
+    RETURN_TYPES = ("S1_MODEL",)
+
+    _MODELS = {
+        "medium": "I-M",
+        "large": "I-L",
+        "extra large": "I-XL",
+    }
+
+    def process(self, model, device):
+        model = DiffusionPipeline.from_pretrained(
+            f"DeepFloyd/IF-{__class__._MODELS[model]}-v1.0",
+            text_encoder=None,
+            **__class__._CONFIG,
+        )
+
+        return self.offload(model, device)
+
+
+class Load_Stage_II(Load_Encoder):
+    RETURN_TYPES = ("S2_MODEL",)
+
+    _MODELS = {
+        "medium": "II-M",
+        "large": "II-L",
+    }
+
+    def process(self, model, device):
+        model = DiffusionPipeline.from_pretrained(
+            f"DeepFloyd/IF-{__class__._MODELS[model]}-v1.0",
+            text_encoder=None,
+            **__class__._CONFIG,
+        )
+
+        return self.offload(model, device)
+
+
+class Load_Stage_III(Load_Encoder):
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("IF_MODEL",),
+                "device": ("STRING", {"default": ""}),
+            },
+        }
+
+    RETURN_TYPES = ("S3_MODEL",)
+
+    def process(self, device):
+        model = DiffusionPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-x4-upscaler",
+            **__class__._CONFIG,
+        )
+
+        return self.offload(model, device)
+
+
+class Encode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": ("S0_MODEL",),
                 "positive": ("STRING", {"default": "", "multiline": True}),
                 "negative": ("STRING", {"default": "", "multiline": True}),
             },
@@ -130,7 +160,7 @@ class Stage_I:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("IF_MODEL",),
+                "model": ("S1_MODEL",),
                 "positive": ("POSITIVE",),
                 "negative": ("NEGATIVE",),
                 "width": ("INT", {"default": 64, "min": 8, "max": 128, "step": 8}),
@@ -170,7 +200,9 @@ class Stage_I:
         ).images
 
         images = (images - images.min()) / (images.max() - images.min())
-        images = images.clamp(0, 1).permute(0, 2, 3, 1).to("cpu", torch.float32)
+        images = images.clamp(0, 1)
+        images = images.permute(0, 2, 3, 1)
+        images = images.to("cpu", torch.float32)
         return (images,)
 
 
@@ -179,7 +211,7 @@ class Stage_II:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("IF_MODEL",),
+                "model": ("S2_MODEL",),
                 "positive": ("POSITIVE",),
                 "negative": ("NEGATIVE",),
                 "images": ("IMAGE",),
@@ -220,7 +252,8 @@ class Stage_II:
             output_type="pt",
         ).images
 
-        images = images.permute(0, 2, 3, 1).to("cpu", torch.float32)
+        images = images.permute(0, 2, 3, 1)
+        images = images.to("cpu", torch.float32)
         return (images,)
 
 
@@ -229,7 +262,7 @@ class Stage_III:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("IF_MODEL",),
+                "model": ("S3_MODEL",),
                 "images": ("IMAGE",),
                 "tile": ([False, True], {"default": False}),
                 "tile_size": (
@@ -291,5 +324,6 @@ class Stage_III:
             output_type="pt",
         ).images
 
-        images = images.permute(0, 2, 3, 1).to("cpu", torch.float32)
+        images = images.permute(0, 2, 3, 1)
+        images = images.to("cpu", torch.float32)
         return (images,)

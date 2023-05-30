@@ -86,8 +86,11 @@ for key, value in config["Load Nodes"].items():
 
         for name, cls in inspect.getmembers(module, inspect.isclass):
             if cls.__module__ == module.__name__:
-                node = f"Zuellni.{key}.{name}"
-                disp = f"{key} {name.replace('_', ' ')}"
+                key = key.replace("_", " ")
+                name = name.replace("_", " ")
+
+                node = f"Zuellni {key} {name}"
+                disp = f"{key} {name}"
 
                 NODE_CLASS_MAPPINGS[node] = cls
                 NODE_DISPLAY_NAME_MAPPINGS[node] = disp
