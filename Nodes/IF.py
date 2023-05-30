@@ -1,5 +1,10 @@
 import torch
-from comfy.model_management import throw_exception_if_processing_interrupted
+from accelerate import cpu_offload_with_hook
+from comfy.model_management import (
+    get_torch_device,
+    soft_empty_cache,
+    throw_exception_if_processing_interrupted,
+)
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
 from transformers import BitsAndBytesConfig, T5EncoderModel
@@ -48,7 +53,41 @@ class Load_Encoder:
         if device:
             return (model.to(device),)
 
-        model.enable_model_cpu_offload()
+        device = get_torch_device()
+        hook = None
+
+        if device != "cpu":
+            model = model.to("cpu")
+            soft_empty_cache()
+
+        if model.text_encoder is not None:
+            _, hook = cpu_offload_with_hook(
+                model.text_encoder,
+                device,
+                prev_module_hook=hook,
+            )
+
+            model.text_encoder.offload_hook = hook
+
+        if model.unet is not None:
+            _, hook = cpu_offload_with_hook(
+                model.unet,
+                device,
+                prev_module_hook=hook,
+            )
+
+            model.unet.offload_hook = hook
+
+        if hasattr(model, "vae") and model.vae is not None:
+            _, hook = cpu_offload_with_hook(
+                model.vae,
+                device,
+                prev_module_hook=hook,
+            )
+
+            model.vae.offload_hook = hook
+
+        model.final_offload_hook = hook
         return (model,)
 
     def process(self, model, device):
