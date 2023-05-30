@@ -40,7 +40,7 @@ IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffu
 ## Image Nodes
 Name | Description
 :--- | :---
-Image&nbsp;Loader | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
+Image&nbsp;Batch | Loads all images in a specified directory, including animated gifs, as a batch. The images will be cropped/resized if their dimensions aren't equal.
 Image&nbsp;Saver | Saves images without metadata in a specified directory. Allows saving a batch of images as a grid or animated gif as well.
 
 ## Multi Nodes

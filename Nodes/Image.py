@@ -9,7 +9,7 @@ from torchvision.transforms import functional as TF
 from torchvision.utils import make_grid
 
 
-class Loader:
+class Batch:
     @classmethod
     def INPUT_TYPES(cls):
         return {
