@@ -1,9 +1,11 @@
 import torch
-from accelerate import cpu_offload_with_hook
+from accelerate import cpu_offload, cpu_offload_with_hook
 from comfy.model_management import (
+    VRAMState,
     get_torch_device,
     soft_empty_cache,
     throw_exception_if_processing_interrupted,
+    vram_state,
 )
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
@@ -53,6 +55,7 @@ class Load_Encoder:
         if device:
             return (model.to(device),)
 
+        components = []
         device = get_torch_device()
         hook = None
 
@@ -60,34 +63,20 @@ class Load_Encoder:
             model = model.to("cpu")
             soft_empty_cache()
 
-        if model.text_encoder is not None:
-            _, hook = cpu_offload_with_hook(
-                model.text_encoder,
-                device,
-                prev_module_hook=hook,
-            )
+        for attr in ["unet", "text_encoder", "vae"]:
+            if hasattr(model, attr) and getattr(model, attr) is not None:
+                components.append(getattr(model, attr))
 
-            model.text_encoder.offload_hook = hook
+        if vram_state.value > VRAMState.LOW_VRAM.value:
+            for component in components:
+                _, hook = cpu_offload_with_hook(component, device, hook)
+                component.offload_hook = hook
 
-        if model.unet is not None:
-            _, hook = cpu_offload_with_hook(
-                model.unet,
-                device,
-                prev_module_hook=hook,
-            )
+            model.final_offload_hook = hook
+        else:
+            for component in components:
+                cpu_offload(component, device)
 
-            model.unet.offload_hook = hook
-
-        if hasattr(model, "vae") and model.vae is not None:
-            _, hook = cpu_offload_with_hook(
-                model.vae,
-                device,
-                prev_module_hook=hook,
-            )
-
-            model.vae.offload_hook = hook
-
-        model.final_offload_hook = hook
         return (model,)
 
     def process(self, model, device):
