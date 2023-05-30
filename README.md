@@ -31,11 +31,11 @@ A poor man's implementation of [DeepFloyd IF](https://huggingface.co/DeepFloyd).
 
 Name | Description
 :--- | :---
-IF&nbsp;Loader | Loads models for use with other `IF` nodes. `Device` can be used to move the models to specific devices, eg `cpu`, `cuda:0`, `cuda:1`. Leaving it empty enables offloading.
-IF&nbsp;Encoder | Encodes prompts for use with `IF Stage I` and `IF Stage II`.
-IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encoder` and returns images which can be used with `IF Stage II` or other nodes.
+IF&nbsp;Load | Loads models for use with other `IF` nodes. `Device` can be used to move the models to specific devices, eg `cpu`, `cuda`, `cuda:0`, `cuda:1`. Leaving it empty enables offloading.
+IF&nbsp;Encode | Encodes prompts for use with `IF Stage I` and `IF Stage II`.
+IF&nbsp;Stage&nbsp;I | Takes the prompt embeds from `IF Encode` and returns images which can be used with `IF Stage II` or other nodes.
 IF&nbsp;Stage&nbsp;II | As above, but also takes `Stage I` or other images and upscales them x4.
-IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile` to `True` allows for upscaling larger images than normally possible.
+IF&nbsp;Stage&nbsp;III | Upscales `Stage II` or other images using [Stable Diffusion x4 upscaler](https://huggingface.co/stabilityai/stable-diffusion-x4-upscaler). Doesn't work with `IF Encoder` embeds, has its own encoder accepting `string` prompts instead. Setting `tile_size` allows for upscaling larger images than normally possible.
 
 ## Image Nodes
 Name | Description

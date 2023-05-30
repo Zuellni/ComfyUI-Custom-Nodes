@@ -292,11 +292,7 @@ class Stage_III:
             "required": {
                 "model": ("S3_MODEL",),
                 "images": ("IMAGE",),
-                "tile": ([False, True], {"default": False}),
-                "tile_size": (
-                    "INT",
-                    {"default": 512, "min": 64, "max": 1024, "step": 64},
-                ),
+                "tile_size": ("INT", {"default": 0, "min": 0, "max": 1024, "step": 64}),
                 "noise": ("INT", {"default": 20, "min": 0, "max": 100}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
@@ -312,17 +308,7 @@ class Stage_III:
     RETURN_TYPES = ("IMAGE",)
 
     def process(
-        self,
-        model,
-        images,
-        tile,
-        tile_size,
-        noise,
-        seed,
-        steps,
-        cfg,
-        positive,
-        negative,
+        self, model, images, tile_size, noise, seed, steps, cfg, positive, negative
     ):
         images = images.permute(0, 3, 1, 2)
         progress = ProgressBar(steps)
@@ -332,7 +318,7 @@ class Stage_III:
             positive = [positive] * batch_size
             negative = [negative] * batch_size
 
-        if tile:
+        if tile_size:
             model.vae.config.sample_size = tile_size
             model.vae.enable_tiling()
 
