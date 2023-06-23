@@ -280,6 +280,7 @@ class Stage_II:
             output_type="pt",
         ).images
 
+        images = images.clamp(0, 1)
         images = images.permute(0, 2, 3, 1)
         images = images.to("cpu", torch.float32)
         return (images,)
