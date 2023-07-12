@@ -66,11 +66,17 @@ if config["Settings"]["Install Requirements"] or first_run:
 if config["Settings"]["Suppress Warnings"]:
     import logging
     from warnings import filterwarnings as filter
-    from diffusers import logging as diffusers_logging
+
+    try:
+        from diffusers import logging as diffusers_logging
+
+        diffusers_logging.set_verbosity_error()
+    except:
+        pass
+
     from transformers import logging as transformers_logging
 
     transformers_logging.set_verbosity_error()
-    diffusers_logging.set_verbosity_error()
 
     filter("ignore", "TypedStorage is deprecated", UserWarning)
     filter("ignore", "The default value of the antialias parameter", UserWarning)
