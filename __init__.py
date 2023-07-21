@@ -12,7 +12,6 @@ config = {
         "Install Requirements": False,
         "Update Repository": False,
         "Quiet Update": True,
-        "Suppress Warnings": True,
     },
     "Load Nodes": {
         "Aesthetic": True,
@@ -53,38 +52,15 @@ try:
 except:
     print("[\033[94mZuellni\033[0m]: Couldn't save config. Proceeding...")
 
-quiet = "-q" if config["Settings"]["Quiet Update"] else ""
+quiet = ["-q"] if config["Settings"]["Quiet Update"] else []
 
 if config["Settings"]["Update Repository"]:
     print("[\033[94mZuellni\033[0m]: Updating repository...")
-    subprocess.run(f"git -C {git_path} pull {quiet}", shell=True)
+    subprocess.run(["git", "-C", git_path, "pull"] + quiet)
 
 if config["Settings"]["Install Requirements"] or first_run:
     print("[\033[94mZuellni\033[0m]: Installing requirements...")
-    subprocess.run(f"pip install {quiet} -U -r {req_path}", shell=True)
-
-if config["Settings"]["Suppress Warnings"]:
-    import logging
-    from warnings import filterwarnings as filter
-
-    try:
-        from diffusers import logging as diffusers_logging
-
-        diffusers_logging.set_verbosity_error()
-    except:
-        pass
-
-    from transformers import logging as transformers_logging
-
-    transformers_logging.set_verbosity_error()
-
-    filter("ignore", "TypedStorage is deprecated", UserWarning)
-    filter("ignore", "The default value of the antialias parameter", UserWarning)
-    filter("ignore", "You seem to be using the pipelines sequentially", UserWarning)
-    filter("ignore", "The `reduce_labels` parameter is deprecated", FutureWarning)
-
-    log = logging.getLogger("xformers")
-    log.addFilter(lambda r: "A matching Triton is not available" not in r.getMessage())
+    subprocess.run(["python", "-m", "pip", "install", "-U", "-r", req_path] + quiet)
 
 for key, value in config["Load Nodes"].items():
     if value:
