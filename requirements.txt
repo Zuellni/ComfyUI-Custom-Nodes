@@ -1,3 +1,6 @@
-bitsandbytes --prefer-binary --extra-index-url=https://jllllll.github.io/bitsandbytes-windows-webui; platform_system == "Windows"
+https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.40.1.post1-py3-none-win_amd64.whl; platform_system == "Windows"
 bitsandbytes; platform_system != "Windows"
+accelerate
 diffusers
+sentencepiece
+transformers
