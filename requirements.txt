@@ -1,6 +1,3 @@
 bitsandbytes --prefer-binary --extra-index-url=https://jllllll.github.io/bitsandbytes-windows-webui; platform_system == "Windows"
 bitsandbytes; platform_system != "Windows"
-accelerate
 diffusers
-sentencepiece
-transformers
