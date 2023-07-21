@@ -57,11 +57,11 @@ quiet = "-q" if config["Settings"]["Quiet Update"] else ""
 
 if config["Settings"]["Update Repository"]:
     print("[\033[94mZuellni\033[0m]: Updating repository...")
-    subprocess.run(f"git -C {git_path} pull {quiet}")
+    subprocess.run(f"git -C {git_path} pull {quiet}", shell=True)
 
 if config["Settings"]["Install Requirements"] or first_run:
     print("[\033[94mZuellni\033[0m]: Installing requirements...")
-    subprocess.run(f"pip install {quiet} -U -r {req_path}")
+    subprocess.run(f"pip install {quiet} -U -r {req_path}", shell=True)
 
 if config["Settings"]["Suppress Warnings"]:
     import logging
