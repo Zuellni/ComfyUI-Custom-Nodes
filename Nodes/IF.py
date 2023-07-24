@@ -40,12 +40,10 @@ class Load_Encoder:
 
     _MODELS = {
         "4-bit": BitsAndBytesConfig(
-            device_map="auto",
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
         ),
         "8-bit": BitsAndBytesConfig(
-            device_map="auto",
             load_in_8bit=True,
         ),
         "16-bit": None,
@@ -80,12 +78,14 @@ class Load_Encoder:
         return (model,)
 
     def process(self, model, device):
+        device_map = "auto" if model != "16-bit" else None
         quantize = model != "16-bit"
 
         text_encoder = T5EncoderModel.from_pretrained(
             "DeepFloyd/IF-I-M-v1.0",
             subfolder="text_encoder",
             variant="fp16",
+            device_map=device_map,
             quantization_config=__class__._MODELS[model],
         )
 
