@@ -9,6 +9,7 @@ from comfy.model_management import (
 )
 from comfy.utils import ProgressBar
 from diffusers import DiffusionPipeline
+from diffusers import DPMSolverMultistepScheduler
 from transformers import BitsAndBytesConfig, T5EncoderModel
 
 
@@ -104,49 +105,106 @@ class Load_Encoder:
 
 class Load_Stage_I(Load_Encoder):
     RETURN_TYPES = ("S1_MODEL",)
+    
+           
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = list(cls._MODELS.keys())
+        schedulers = list(cls._SCHEDULERS.keys())
+
+        return {
+            "required": {
+                "model": (models, {"default": models[0]}),
+                "scheduler": (schedulers, {"default": schedulers[0]}),
+                "karrasSigmas": ("BOOLEAN", {"default": True}),
+                "device": ("STRING", {"default": ""}),
+            },
+        }
 
     _MODELS = {
         "medium": "I-M",
         "large": "I-L",
         "extra large": "I-XL",
     }
+    
+    _SCHEDULERS = {
+        "default": "default",
+        "sde-dpmsolver++": "sde-dpmsolver++",
+    }
 
-    def process(self, model, device):
+    def process(self, model, device,scheduler, karrasSigmas):
         model = DiffusionPipeline.from_pretrained(
-            f"DeepFloyd/IF-{__class__._MODELS[model]}-v1.0",
+            f"DeepFloyd/IF-{__class__._MODELS[model]}-v1.0",            
             text_encoder=None,
             **__class__._CONFIG,
         )
+                
+        if scheduler == "sde-dpmsolver++":
+            SdeScheduler = DPMSolverMultistepScheduler.from_config(model.scheduler.config)
+            SdeScheduler.config.algorithm_type = 'sde-dpmsolver++'
+            model.scheduler= SdeScheduler
+                
+        if (karrasSigmas) :
+            model.scheduler.config.use_karras_sigmas=True
 
         return self.offload(model, device)
 
 
 class Load_Stage_II(Load_Encoder):
     RETURN_TYPES = ("S2_MODEL",)
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = list(cls._MODELS.keys())
+        schedulers = list(cls._SCHEDULERS.keys())
+
+        return {
+            "required": {
+                "model": (models, {"default": models[0]}),
+                "scheduler": (schedulers, {"default": schedulers[0]}),
+                "karrasSigmas": ("BOOLEAN", {"default": True}),
+                "device": ("STRING", {"default": ""}),
+            },
+        }
+    
+    _SCHEDULERS = {
+        "default": "default",
+        "sde-dpmsolver++": "sde-dpmsolver++",
+    }
 
     _MODELS = {
         "medium": "II-M",
         "large": "II-L",
     }
-
-    def process(self, model, device):
+    
+    def process(self, model, device, scheduler, karrasSigmas):
         model = DiffusionPipeline.from_pretrained(
             f"DeepFloyd/IF-{__class__._MODELS[model]}-v1.0",
             text_encoder=None,
             **__class__._CONFIG,
         )
-
+        
+        if scheduler == "sde-dpmsolver++":
+            SdeScheduler = DPMSolverMultistepScheduler.from_config(model.scheduler.config)
+            SdeScheduler.config.algorithm_type = 'sde-dpmsolver++'
+            model.scheduler= SdeScheduler
+       
+        if (karrasSigmas) :
+            model.scheduler.config.use_karras_sigmas=True
+  
         return self.offload(model, device)
 
 
 class Load_Stage_III(Load_Encoder):
     @classmethod
     def INPUT_TYPES(cls):
+
         return {
             "required": {
                 "device": ("STRING", {"default": ""}),
             },
         }
+    
 
     RETURN_TYPES = ("S3_MODEL",)
 
