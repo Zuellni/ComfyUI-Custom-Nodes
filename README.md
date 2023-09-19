@@ -1,5 +1,9 @@
 # Custom nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI).
 
+## Disclaimer
+Please note that this repository is now archived and will no longer be maintained or updated.  
+IF has a lot of issues and I'm no longer interested in dealing with it. Most of the other nodes have either already been added to ComfyUI in some form or exist somewhere else. I will move the aesthetic nodes to a separate repository at some point.
+
 ## Installation
 Clone the repository to `custom_nodes` in your ComfyUI directory:
 ```
